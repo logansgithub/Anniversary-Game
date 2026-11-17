@@ -104,9 +104,9 @@ window.GAME_CONFIG = {
         maxSpeed: 5.6,
         continuousForward: 0
       },
-      completionHeadline: "Surprise! Chloe's Mom Snapped Our Photos! 📸",
-      completionStory: "You made it across the ice rink to the Hot Cocoa Bench—and right on cue, Chloe's mom popped out with her camera to capture the sweetest moments!",
-      nextButtonText: "Continue to Next Stage ➡️"
+      completionHeadline: "Level Complete! Chloe's Mom Snapped Our Photos! 📸",
+      completionStory: "You crossed the finish line across the ice rink to the Hot Cocoa Bench—and right on cue, Chloe's mom popped out with her camera to capture the sweetest moments!",
+      nextButtonText: "Next Level ➡️"
     },
     {
       id: 2,
@@ -119,9 +119,9 @@ window.GAME_CONFIG = {
         maxSpeed: 5.4,
         continuousForward: 0
       },
-      completionHeadline: "The King's Royal Blessing! 👑",
-      completionStory: "With flower crowns braided, bard lutes strumming, and a black-caped warlock clearing the way with arcane magic, you reached the Royal Court and received the King's blessing!",
-      nextButtonText: "Continue to Next Stage ➡️"
+      completionHeadline: "Level Complete! The King's Royal Blessing! 👑",
+      completionStory: "With flower crowns braided, bard lutes strumming, and a black-caped warlock clearing the way with arcane magic, you crossed the finish line into the Royal Court and received the King's blessing!",
+      nextButtonText: "Next Level ➡️"
     },
     {
       id: 3,
@@ -134,9 +134,9 @@ window.GAME_CONFIG = {
         maxSpeed: 6.2,
         continuousForward: 0.11 // Gentle downhill slope pull
       },
-      completionHeadline: "Fondue Night & Reindeer Racing! 🍫🦌",
-      completionStory: "You carved down the mountain into the warm Ski Lodge! Inside, the strawberries, bananas, and marshmallows are dipping into bubbling melted chocolate while the reindeers race neck-and-neck on the lodge TV!",
-      nextButtonText: "Continue to Final Stage ➡️"
+      completionHeadline: "Level Complete! Fondue Night & Reindeer Racing! 🍫🦌",
+      completionStory: "You crossed the finish line into the warm Ski Lodge! Inside, the strawberries, bananas, and marshmallows are dipping into bubbling melted chocolate while the reindeers race neck-and-neck on the lodge TV!",
+      nextButtonText: "Next Level ➡️"
     },
     {
       id: 4,
@@ -149,9 +149,9 @@ window.GAME_CONFIG = {
         maxSpeed: 7.0,
         continuousForward: 0.23 // High-speed Cop Slide continuous forward momentum!
       },
-      completionHeadline: "Dinner with Julia in Boston! 🥂✨",
-      completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you made it to dinner with Julia!",
-      nextButtonText: "See What's Waiting... 💝"
+      completionHeadline: "Level Complete! Dinner with Julia in Boston! 🥂✨",
+      completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you crossed the finish line for dinner with Julia!",
+      nextButtonText: "Next Level ➡️"
     }
   ],
 

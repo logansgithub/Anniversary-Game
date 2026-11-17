@@ -287,6 +287,11 @@ body {
   z-index: 20;
 }
 
+#transitionOverlay,
+#victoryOverlay {
+  background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+}
+
 .hidden {
   display: none !important;
 }

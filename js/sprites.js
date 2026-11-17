@@ -1041,19 +1041,86 @@ class SpriteRenderer {
       this.drawCopSlide(ctx, 68 - state.stageDistance * 0.4, height * 0.52);
     }
 
-    // Draw the Stage Goal when it scrolls into view on the right side
-    if (state && state.goalActive && typeof state.goalX === "number") {
-      const gx = state.goalX;
-      const gy = state.goalY || height * 0.54;
-      if (levelId === 1) {
-        this.drawHotCocoaBenchGoal(ctx, gx, gy, time, state);
-      } else if (levelId === 2) {
-        this.drawRoyalCourtGoal(ctx, gx, gy, time);
-      } else if (levelId === 3) {
-        this.drawSkiLodgeGoal(ctx, gx, gy, time);
-      } else {
-        this.drawDinnerWithJuliaGoal(ctx, gx, gy, time);
+    // Draw the Vertical Finish Line when it enters from the right side
+    if (state && state.finishLineActive && typeof state.finishLineX === "number") {
+      this.drawVerticalFinishLine(ctx, state.finishLineX, 114, height - 28, levelId, time, state);
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * Draws a full-height vertical finish line spanning the playable corridor,
+   * plus the stage's destination scene right behind the line.
+   */
+  drawVerticalFinishLine(ctx, x, topY, bottomY, levelId, time, state) {
+    ctx.save();
+
+    const lineHeight = bottomY - topY;
+    const stripWidth = 16;
+    const tileSize = 8;
+
+    // Soft golden glow along the vertical finish line
+    const glow = ctx.createLinearGradient(x - 24, 0, x + 24, 0);
+    glow.addColorStop(0, "rgba(250, 204, 21, 0)");
+    glow.addColorStop(0.5, "rgba(250, 204, 21, 0.35)");
+    glow.addColorStop(1, "rgba(250, 204, 21, 0)");
+    ctx.fillStyle = glow;
+    ctx.fillRect(x - 24, topY, 48, lineHeight);
+
+    // Checkered Vertical Finish Line Banner
+    const rows = Math.floor(lineHeight / tileSize);
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < 2; c++) {
+        const isDark = (r + c) % 2 === 0;
+        ctx.fillStyle = isDark ? "#0f172a" : "#ffffff";
+        ctx.fillRect(
+          x - stripWidth * 0.5 + c * tileSize,
+          topY + r * tileSize,
+          tileSize,
+          tileSize
+        );
       }
+    }
+
+    // Gold border lines on left & right of the checkered strip
+    ctx.strokeStyle = "#facc15";
+    ctx.lineWidth = 2.5;
+    ctx.strokeRect(x - stripWidth * 0.5, topY, stripWidth, lineHeight);
+
+    // Top and Bottom Finish Posts with Golden Finials
+    ctx.fillStyle = "#f59e0b";
+    ctx.beginPath();
+    ctx.arc(x, topY, 9, 0, Math.PI * 2);
+    ctx.arc(x, bottomY, 9, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#fef08a";
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Destination prop resting just past the finish line (no circle aura)
+    const propX = x + 62;
+    const propY = (topY + bottomY) * 0.5;
+    if (levelId === 1) {
+      // Cozy Wooden Bench with 2 Hot Cocoas
+      ctx.fillStyle = "#92400e";
+      this.roundRect(ctx, propX - 24, propY - 16, 48, 32, 6);
+      ctx.fill();
+      ctx.font = "18px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("☕☕", propX, propY + 5);
+    } else if (levelId === 2) {
+      ctx.font = "28px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("👑", propX, propY + 8);
+    } else if (levelId === 3) {
+      ctx.font = "26px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🫕", propX, propY + 8);
+    } else {
+      ctx.font = "22px sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("🕯️🥂", propX, propY + 8);
     }
 
     ctx.restore();

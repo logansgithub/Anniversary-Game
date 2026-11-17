@@ -85,12 +85,12 @@ class AnniversaryGame {
     this.particles = [];
     this.floatingTexts = [];
 
-    // Goal Landmark (Spawns on the right edge when stage timer completes)
-    this.goalZone = {
+    // Vertical Finish Line (Spawns on the right edge when win condition is reached)
+    this.finishLine = {
       active: false,
-      x: this.width + 80,
-      y: this.height * 0.54,
-      radius: 52
+      x: this.width + 30,
+      targetX: this.width - 140,
+      entrySpeed: 280
     };
 
     // Dual Input Handler State (WASD + Arrow Keys)
@@ -256,11 +256,11 @@ class AnniversaryGame {
     this.powerTokenSpawnTimer = 6.5;
     this.lastObstacleY = null;
 
-    this.goalZone = {
+    this.finishLine = {
       active: false,
-      x: this.width + 80,
-      y: this.height * 0.54,
-      radius: 52
+      x: this.width + 30,
+      targetX: this.width - 140,
+      entrySpeed: 280
     };
 
     this.powerCharges = 0;
@@ -392,14 +392,20 @@ class AnniversaryGame {
     if (this.state !== "PLAYING") return;
 
     this.stageElapsed += dt;
+    const winConditionReached = this.stageElapsed >= this.stageDurationSec;
 
     // Progressive Difficulty Scaling: Over time, increase speed & spawn rate!
     const progressRatio = Math.min(1, this.stageElapsed / this.stageDurationSec);
     const difficultyMultiplier = 1.0 + progressRatio * 0.45; // Up to 1.45x faster over the stage
     const boostSpeedBonus = this.isInvincible ? 1.25 : 1.0;
-    const currentScrollSpeed = this.baseScrollSpeed * difficultyMultiplier * boostSpeedBonus;
 
-    // Scroll seamlessly looping background from right to left
+    // 1. STOP THE ENVIRONMENT when win condition is reached:
+    // Immediately set scroll speed to 0 so the background stops scrolling!
+    const currentScrollSpeed = winConditionReached
+      ? 0
+      : this.baseScrollSpeed * difficultyMultiplier * boostSpeedBonus;
+
+    // Scroll seamlessly looping background from right to left (frozen when currentScrollSpeed === 0)
     this.scrollOffset = (this.scrollOffset + currentScrollSpeed * dt) % this.width;
     this.stageDistance += currentScrollSpeed * dt;
 
@@ -477,8 +483,8 @@ class AnniversaryGame {
       this.player.vy = 0;
     }
 
-    // Spawn Obstacles & Collectibles along the right edge until goal phase begins
-    if (this.stageElapsed < this.stageDurationSec) {
+    // Spawn Obstacles & Collectibles along the right edge ONLY before win condition is reached
+    if (!winConditionReached) {
       this.obstacleSpawnTimer -= dt;
       if (this.obstacleSpawnTimer <= 0) {
         // Decrease spawn interval over time to increase difficulty
@@ -517,28 +523,33 @@ class AnniversaryGame {
         );
       }
     } else {
-      // Stage duration reached: Scroll the Goal Landmark in from the right edge!
-      this.goalZone.active = true;
-      const targetGoalX = this.width - 110;
-      if (this.goalZone.x > targetGoalX) {
-        this.goalZone.x -= currentScrollSpeed * dt * 0.85;
+      // 2. THE FINISH LINE: Spawn vertical finish line on the right side of the screen,
+      // move it left into the frame, and stop at targetX waiting for the player to cross it.
+      this.finishLine.active = true;
+      if (this.finishLine.x > this.finishLine.targetX) {
+        this.finishLine.x = Math.max(
+          this.finishLine.targetX,
+          this.finishLine.x - this.finishLine.entrySpeed * dt
+        );
       }
     }
 
-    // Update Obstacles, Destroy Off-Screen Obstacles & Check Tight Bounding-Box Collisions
+    // Update existing Obstacles (continue moving left off-screen and get destroyed)
     this.updateObstacles(dt, levelCfg.id, { minY: 132, maxY: this.height - 36 });
 
-    // Update Collectibles & Destroy Off-Screen Collectibles
+    // Update existing Collectibles (continue moving left off-screen and get destroyed)
     this.updateCollectibles(dt);
 
     // Update Particles & Floating Texts
     this.updateParticles(dt);
 
-    // Check Goal Completion when Goal Landmark is on screen
-    if (this.goalZone.active) {
-      const distToGoal = Math.hypot(this.player.x - this.goalZone.x, this.player.y - this.goalZone.y);
-      if (distToGoal < this.goalZone.radius + this.player.radius) {
-        this.handleGoalReached(levelCfg.id);
+    // 3. PLAYER CROSSING & 4. CELEBRATION SCREEN:
+    // Once the player's bounding box crosses the vertical finish line, freeze movement
+    // and transition to the static 'Level Complete' celebration screen!
+    if (this.finishLine.active) {
+      const playerRightEdge = this.player.x + this.player.hitboxW * 0.5;
+      if (playerRightEdge >= this.finishLine.x) {
+        this.handleFinishLineCrossed();
       }
     }
 
@@ -658,22 +669,17 @@ class AnniversaryGame {
     }
   }
 
-  handleGoalReached(levelId) {
-    if (levelId === 1) {
-      // Stage 1 Surprise Ending: Chloe's Mom pops out and snaps photos at the Hot Cocoa Bench!
-      this.state = "CUTSCENE";
-      this.cutsceneTimer = 2.6;
-      this.shutterCount = 0;
-      this.player.x = this.goalZone.x - 16;
-      this.player.y = this.goalZone.y + 4;
-      this.player.vx = 0;
-      this.player.vy = 0;
-      window.soundManager.playCameraShutter();
-      this.cameraFlash = 1.0;
-      this.addFloatingText(this.goalZone.x, this.goalZone.y - 68, "📸 Chloe's Mom: 'Smile, you two!'", "#fef08a");
-    } else {
-      this.openLevelTransitionModal();
-    }
+  handleFinishLineCrossed() {
+    // Freeze all player movement immediately
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.keys.up = false;
+    this.keys.down = false;
+    this.keys.left = false;
+    this.keys.right = false;
+
+    // Transition directly to the static 'Level Complete' celebration screen
+    this.openLevelTransitionModal();
   }
 
   updateCutscene(dt) {
@@ -939,13 +945,12 @@ class AnniversaryGame {
 
     ctx.clearRect(0, 0, this.width, this.height);
 
-    // 1. Draw Seamlessly Looping Horizontal Scrolling Environment & Goal Landmark
+    // 1. Draw Seamlessly Looping Horizontal Scrolling Environment & Static Finish Line
     this.sprites.drawEnvironment(ctx, this.width, this.height, levelId, this.time, {
       scrollOffset: this.scrollOffset,
       stageDistance: this.stageDistance,
-      goalActive: this.goalZone.active,
-      goalX: this.goalZone.x,
-      goalY: this.goalZone.y,
+      finishLineActive: this.finishLine.active,
+      finishLineX: this.finishLine.x,
       cameraFlash: this.cameraFlash,
       isCutscene: this.state === "CUTSCENE"
     });
