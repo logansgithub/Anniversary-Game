@@ -1168,22 +1168,26 @@ class SpriteRenderer {
   }
 
   /**
-   * Draws Level Collectibles & Special Power-Up Tokens
+   * Draws Level Collectibles & Special Power-Up Tokens (~1.7x larger & more detailed)
    */
   drawCollectible(ctx, item, time) {
     ctx.save();
-    const bob = Math.sin(time * 5 + item.seed) * 4;
+    const bob = Math.sin(time * 5 + item.seed) * 5.5;
     ctx.translate(item.x, item.y + bob);
 
-    // Soft glow behind item
     const isPowerToken = item.isPowerToken;
-    const glowRadius = isPowerToken ? 28 : 20;
-    const grad = ctx.createRadialGradient(0, 0, 2, 0, 0, glowRadius);
+    const glowRadius = isPowerToken ? 42 : 32;
+    const badgeRadius = isPowerToken ? 24 : 18;
+
+    // Outer radiant glow
+    const grad = ctx.createRadialGradient(0, 0, 4, 0, 0, glowRadius);
     if (isPowerToken) {
-      grad.addColorStop(0, "rgba(250, 204, 21, 0.75)");
+      grad.addColorStop(0, "rgba(250, 204, 21, 0.88)");
+      grad.addColorStop(0.55, "rgba(244, 114, 182, 0.45)");
       grad.addColorStop(1, "rgba(250, 204, 21, 0)");
     } else {
-      grad.addColorStop(0, "rgba(255, 255, 255, 0.65)");
+      grad.addColorStop(0, "rgba(255, 255, 255, 0.85)");
+      grad.addColorStop(0.6, "rgba(186, 230, 253, 0.38)");
       grad.addColorStop(1, "rgba(255, 255, 255, 0)");
     }
     ctx.fillStyle = grad;
@@ -1191,18 +1195,35 @@ class SpriteRenderer {
     ctx.arc(0, 0, glowRadius, 0, Math.PI * 2);
     ctx.fill();
 
+    // Inner medallion backing so collectible pops against any background
+    ctx.fillStyle = isPowerToken
+      ? "rgba(254, 240, 138, 0.28)"
+      : "rgba(255, 255, 255, 0.26)";
+    ctx.strokeStyle = isPowerToken ? "#facc15" : "rgba(255, 255, 255, 0.85)";
+    ctx.lineWidth = isPowerToken ? 2.8 : 2;
+    ctx.beginPath();
+    ctx.arc(0, 0, badgeRadius + Math.sin(time * 7 + item.seed) * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Rotating dashed halo on Power-Up Tokens
     if (isPowerToken) {
-      ctx.strokeStyle = "#facc15";
+      ctx.save();
+      ctx.rotate(time * 2.5);
+      ctx.strokeStyle = "#fde047";
       ctx.lineWidth = 2;
+      ctx.setLineDash([6, 5]);
       ctx.beginPath();
-      ctx.arc(0, 0, 19 + Math.sin(time * 8) * 2, 0, Math.PI * 2);
+      ctx.arc(0, 0, badgeRadius + 5, 0, Math.PI * 2);
       ctx.stroke();
+      ctx.restore();
     }
 
-    ctx.font = isPowerToken ? "24px sans-serif" : "20px sans-serif";
+    // Large, crisp Collectible Icon (~1.7x bigger)
+    ctx.font = isPowerToken ? "38px sans-serif" : "32px sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(item.icon || "❄️", 0, 1);
+    ctx.fillText(item.icon || "❄️", 0, 2);
 
     ctx.restore();
   }
@@ -1233,36 +1254,95 @@ class SpriteRenderer {
     const tctx = tile.getContext("2d");
 
     if (levelId === 1) {
-      // STAGE 1: Seamless Side-Scrolling Winter Ice Rink
-      const skyGrad = tctx.createLinearGradient(0, 0, 0, height);
-      skyGrad.addColorStop(0, "#0f172a");
-      skyGrad.addColorStop(0.22, "#1e3a5f");
-      skyGrad.addColorStop(0.23, "#dbeafe");
-      skyGrad.addColorStop(1, "#eff6ff");
-      tctx.fillStyle = skyGrad;
-      tctx.fillRect(0, 0, width, height);
+      // STAGE 1: Seamless Side-Scrolling INDOOR ICE SKATING RINK ARENA
+      // 1. Indoor Arena Ceiling & Upper Wall Backdrop
+      const wallGrad = tctx.createLinearGradient(0, 0, 0, 118);
+      wallGrad.addColorStop(0, "#1e293b");
+      wallGrad.addColorStop(0.45, "#334155");
+      wallGrad.addColorStop(1, "#475569");
+      tctx.fillStyle = wallGrad;
+      tctx.fillRect(0, 0, width, 118);
 
-      // Stars across night sky
-      tctx.fillStyle = "#fef9c3";
-      for (let i = 0; i < 24; i++) {
+      // Overhead Steel Arena Roof Trusses & Crossbeams (seamless 160px repeat)
+      tctx.strokeStyle = "#0f172a";
+      tctx.lineWidth = 3;
+      tctx.beginPath();
+      tctx.moveTo(0, 24);
+      tctx.lineTo(width, 24);
+      for (let x = 0; x < width; x += 160) {
+        tctx.moveTo(x, 0);
+        tctx.lineTo(x + 80, 24);
+        tctx.lineTo(x + 160, 0);
+      }
+      tctx.stroke();
+
+      // Indoor Bleacher Seating Tiers & Warm Arched Arena Windows
+      tctx.fillStyle = "#1e3a5f";
+      tctx.fillRect(0, 56, width, 42);
+      tctx.strokeStyle = "rgba(148, 163, 184, 0.35)";
+      tctx.lineWidth = 2;
+      for (let r = 0; r < 3; r++) {
         tctx.beginPath();
-        tctx.arc((i * 40) + 18, 16 + ((i * 23) % 72), 1.6, 0, Math.PI * 2);
+        tctx.moveTo(0, 64 + r * 11);
+        tctx.lineTo(width, 64 + r * 11);
+        tctx.stroke();
+      }
+
+      // Warm Glowing Indoor Arch Windows & Cocoa Concession Booth
+      for (let x = 80; x < width; x += 240) {
+        tctx.fillStyle = "rgba(254, 240, 138, 0.25)";
+        tctx.strokeStyle = "#94a3b8";
+        tctx.lineWidth = 2;
+        this.roundRect(tctx, x - 36, 32, 72, 48, 12);
+        tctx.fill();
+        tctx.stroke();
+      }
+      this.drawHotCocoaCabin(tctx, 420, 26);
+
+      // Hanging Indoor Arena Can Lights & Warm Spotlight Cones
+      for (let x = 120; x < width; x += 240) {
+        tctx.fillStyle = "#0f172a";
+        tctx.fillRect(x - 10, 24, 20, 8);
+        tctx.fillStyle = "#fef08a";
+        tctx.beginPath();
+        tctx.arc(x, 33, 6, 0, Math.PI * 2);
         tctx.fill();
       }
 
-      // Repeating distant snowy pine trees & cabin silhouettes
-      for (let x = 40; x < width; x += 120) {
-        this.drawPineTree(tctx, x, 112);
-        this.drawPineTree(tctx, x + 55, 114);
+      // 2. Smooth Indoor Resurfaced Ice Sheet
+      const iceGrad = tctx.createLinearGradient(0, 114, 0, height - 28);
+      iceGrad.addColorStop(0, "#dbeafe");
+      iceGrad.addColorStop(0.5, "#eff6ff");
+      iceGrad.addColorStop(1, "#dbeafe");
+      tctx.fillStyle = iceGrad;
+      tctx.fillRect(0, 114, width, height - 142);
+
+      // Subtle Indoor Rink Blue/Red Lines & Faceoff Circles (seamless repeat)
+      tctx.strokeStyle = "rgba(59, 130, 246, 0.22)";
+      tctx.lineWidth = 6;
+      for (let x = 240; x < width; x += 480) {
+        tctx.beginPath();
+        tctx.moveTo(x, 114);
+        tctx.lineTo(x, height - 28);
+        tctx.stroke();
       }
-      this.drawHotCocoaCabin(tctx, 380, 32);
+      tctx.strokeStyle = "rgba(239, 68, 68, 0.22)";
+      tctx.lineWidth = 4;
+      for (let x = 480; x <= width; x += 480) {
+        tctx.beginPath();
+        tctx.arc(x, height * 0.54, 68, 0, Math.PI * 2);
+        tctx.stroke();
+      }
 
-      // Continuous horizontal Ice Rink surface
-      tctx.fillStyle = "#e0f2fe";
-      tctx.fillRect(0, 112, width, height - 138);
+      // Glossy Overhead Spotlight Reflections & Skate Carvings on Ice
+      tctx.fillStyle = "rgba(255, 255, 255, 0.42)";
+      for (let x = 120; x < width; x += 240) {
+        tctx.beginPath();
+        tctx.ellipse(x, height * 0.52, 55, 110, 0.15, 0, Math.PI * 2);
+        tctx.fill();
+      }
 
-      // Ice skate carving sheen arcs
-      tctx.strokeStyle = "rgba(255, 255, 255, 0.78)";
+      tctx.strokeStyle = "rgba(255, 255, 255, 0.82)";
       tctx.lineWidth = 2;
       for (let i = 0; i < 6; i++) {
         tctx.beginPath();
@@ -1270,18 +1350,29 @@ class SpriteRenderer {
         tctx.stroke();
       }
 
-      // Top & bottom continuous wooden rink barriers
-      tctx.fillStyle = "#92400e";
-      tctx.fillRect(0, 108, width, 7);
-      tctx.fillRect(0, height - 28, width, 7);
+      // 3. Classic Indoor Rink Dasher Boards (White Boards + Red Cap Rail + Yellow Kickplate)
+      // Top Dasher Board
+      tctx.fillStyle = "#f8fafc";
+      tctx.fillRect(0, 94, width, 20);
+      tctx.fillStyle = "#dc2626";
+      tctx.fillRect(0, 91, width, 4);
+      tctx.fillStyle = "#facc15";
+      tctx.fillRect(0, 111, width, 4);
 
-      // Fairy light bulbs every 32px (960 is divisible by 32 -> seamless loop!)
+      // Bottom Dasher Board
+      tctx.fillStyle = "#f8fafc";
+      tctx.fillRect(0, height - 28, width, 20);
+      tctx.fillStyle = "#facc15";
+      tctx.fillRect(0, height - 31, width, 4);
+      tctx.fillStyle = "#dc2626";
+      tctx.fillRect(0, height - 10, width, 4);
+
+      // Twinkling Indoor Fairy Lights strung along the upper rink glass
       const fairyColors = ["#fde047", "#f472b6", "#38bdf8", "#4ade80"];
       for (let x = 16; x < width; x += 32) {
         tctx.fillStyle = fairyColors[Math.floor(x / 32) % fairyColors.length];
         tctx.beginPath();
-        tctx.arc(x, 111, 4, 0, Math.PI * 2);
-        tctx.arc(x, height - 25, 3.8, 0, Math.PI * 2);
+        tctx.arc(x, 92, 4, 0, Math.PI * 2);
         tctx.fill();
       }
 
@@ -1526,23 +1617,115 @@ class SpriteRenderer {
     if (levelId === 1) {
       // Cozy Wooden Bench with 2 Hot Cocoas
       ctx.fillStyle = "#92400e";
-      this.roundRect(ctx, propX - 24, propY - 16, 48, 32, 6);
+      this.roundRect(ctx, propX - 28, propY - 18, 56, 36, 6);
       ctx.fill();
-      ctx.font = "18px sans-serif";
+      ctx.fillStyle = "#b45309";
+      this.roundRect(ctx, propX - 24, propY - 13, 48, 26, 4);
+      ctx.fill();
+      ctx.font = "22px sans-serif";
       ctx.textAlign = "center";
-      ctx.fillText("☕☕", propX, propY + 5);
+      ctx.fillText("☕☕", propX, propY + 6);
+
+      // Level 1 Finish Cutscene: Chloe's Mom appears and snaps photos of Jana & Partner!
+      if (state && state.isCutscene) {
+        this.drawChloesMomCutscene(ctx, propX + 12, propY - 88, time, state);
+      }
     } else if (levelId === 2) {
-      ctx.font = "28px sans-serif";
+      ctx.font = "34px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("👑", propX, propY + 8);
     } else if (levelId === 3) {
-      ctx.font = "26px sans-serif";
+      ctx.font = "32px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("🫕", propX, propY + 8);
     } else {
-      ctx.font = "22px sans-serif";
+      ctx.font = "28px sans-serif";
       ctx.textAlign = "center";
       ctx.fillText("🕯️🥂", propX, propY + 8);
+    }
+
+    ctx.restore();
+  }
+
+  /**
+   * Renders Chloe's Mom stepping out with her camera to snap photos of Jana
+   * and her partner right after crossing the Level 1 finish line.
+   */
+  drawChloesMomCutscene(ctx, x, y, time, state) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Subtle excited bounce as she snaps photos
+    const bounce = Math.abs(Math.sin(time * 10)) * -4;
+    ctx.translate(0, bounce);
+    ctx.scale(1.75, 1.75);
+
+    // Shadow
+    ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+    ctx.beginPath();
+    ctx.ellipse(0, 20, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Stylish Lavender-Plum Winter Coat & Scarf
+    ctx.fillStyle = "#9333ea";
+    this.roundRect(ctx, -10.5, 0, 21, 15.5, 5.5);
+    ctx.fill();
+    ctx.fillStyle = "#f5d0fe";
+    this.roundRect(ctx, -9.5, -1.8, 19, 3.8, 1.8);
+    ctx.fill();
+
+    // Head & Warm Smile
+    ctx.fillStyle = "#fed7aa";
+    ctx.beginPath();
+    ctx.arc(0, -8.5, 9.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Chestnut Bob Hair
+    ctx.fillStyle = "#78350f";
+    ctx.beginPath();
+    ctx.arc(0, -10.5, 10.2, Math.PI * 0.88, Math.PI * 2.12);
+    ctx.fill();
+
+    // Happy Eyes & Smile
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.arc(-3.5, -8.5, 1.6, 0, Math.PI * 2);
+    ctx.arc(3.5, -8.5, 1.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#7c2d12";
+    ctx.lineWidth = 1.3;
+    ctx.beginPath();
+    ctx.arc(0, -5.8, 2.8, 0.15 * Math.PI, 0.85 * Math.PI);
+    ctx.stroke();
+
+    // Hands holding DSLR Camera aimed toward Jana & Partner on the left
+    ctx.fillStyle = "#1e293b";
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 1.2;
+    this.roundRect(ctx, -18, -5, 12, 9, 2);
+    ctx.fill();
+    ctx.stroke();
+
+    // Camera Lens barrel pointing left-downward
+    ctx.fillStyle = "#475569";
+    ctx.beginPath();
+    ctx.arc(-18, -0.5, 3.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Bright Starburst Camera Flash when shutter fires!
+    if (state.cameraFlash > 0.05) {
+      ctx.save();
+      ctx.translate(-21, -0.5);
+      const flashRadius = 36 * state.cameraFlash;
+      const flashGrad = ctx.createRadialGradient(0, 0, 2, 0, 0, flashRadius);
+      flashGrad.addColorStop(0, "rgba(255, 255, 255, 1)");
+      flashGrad.addColorStop(0.45, "rgba(254, 240, 138, 0.9)");
+      flashGrad.addColorStop(1, "rgba(254, 240, 138, 0)");
+      ctx.fillStyle = flashGrad;
+      ctx.beginPath();
+      ctx.arc(0, 0, flashRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
     }
 
     ctx.restore();

@@ -678,25 +678,52 @@ class AnniversaryGame {
     this.keys.left = false;
     this.keys.right = false;
 
-    // Transition directly to the static 'Level Complete' celebration screen
-    this.openLevelTransitionModal();
+    const levelCfg = this.config.levels[this.currentLevelIndex];
+    if (levelCfg && levelCfg.id === 1) {
+      // Level 1 Finish Animation: Chloe's Mom steps out and snaps several photos of us!
+      this.state = "CUTSCENE";
+      this.cutsceneTimer = 3.2;
+      this.shutterCount = 0;
+      this.obstacles = [];
+      this.collectibles = [];
+
+      // Pose Jana & Partner right past the finish line next to the Hot Cocoa Bench
+      this.player.x = this.finishLine.x + 28;
+      this.player.y = (114 + (this.height - 28)) * 0.5 + 16;
+
+      window.soundManager.playCameraShutter();
+      this.cameraFlash = 1.0;
+      this.spawnParticle(this.player.x - 10, this.player.y - 30, "📸");
+      this.spawnParticle(this.player.x + 12, this.player.y - 36, "💖");
+      this.addFloatingText(this.finishLine.x + 40, this.player.y - 115, "📸 Chloe's Mom: 'Wait—smile, you two!'", "#fef08a");
+    } else {
+      // Transition directly to the static 'Level Complete' celebration screen
+      this.openLevelTransitionModal();
+    }
   }
 
   updateCutscene(dt) {
     this.cutsceneTimer -= dt;
-    this.cameraFlash = Math.max(0, this.cameraFlash - dt * 2.8);
+    this.cameraFlash = Math.max(0, this.cameraFlash - dt * 2.6);
 
-    if (this.cutsceneTimer < 1.8 && this.shutterCount === 0) {
+    // Snap Photo #2
+    if (this.cutsceneTimer < 2.15 && this.shutterCount === 0) {
       this.shutterCount = 1;
       this.cameraFlash = 1.0;
       window.soundManager.playCameraShutter();
-      this.addFloatingText(this.goalZone.x - 10, this.goalZone.y - 55, "📸 *CLICK!* 'One more by the cocoa!'", "#f472b6");
+      this.spawnParticle(this.player.x - 18, this.player.y - 34, "🖼️");
+      this.spawnParticle(this.player.x + 8, this.player.y - 40, "✨");
+      this.addFloatingText(this.finishLine.x + 30, this.player.y - 98, "📸 *CLICK!* 'One more by the hot cocoa!'", "#f472b6");
     }
-    if (this.cutsceneTimer < 0.9 && this.shutterCount === 1) {
+
+    // Snap Photo #3
+    if (this.cutsceneTimer < 1.05 && this.shutterCount === 1) {
       this.shutterCount = 2;
       this.cameraFlash = 1.0;
       window.soundManager.playCameraShutter();
-      this.addFloatingText(this.goalZone.x + 10, this.goalZone.y - 55, "📸 *FLASH!* 'So cute!!'", "#fde047");
+      this.spawnParticle(this.player.x, this.player.y - 38, "🖼️");
+      this.spawnParticle(this.player.x - 22, this.player.y - 44, "💖");
+      this.addFloatingText(this.finishLine.x + 45, this.player.y - 98, "📸 *FLASH!* 'Got it! So cute!!'", "#fde047");
     }
 
     this.updateParticles(dt);
@@ -1065,10 +1092,46 @@ class AnniversaryGame {
       ctx.restore();
     });
 
-    // 9. Camera Flash Overlay during Chloe's Mom photo shoot in Stage 1
+    // 9. Camera Viewfinder Focus Frame & Flash Overlay during Chloe's Mom photo shoot in Stage 1
+    if (this.state === "CUTSCENE" && levelId === 1) {
+      ctx.save();
+      const fx = this.player.x - 74;
+      const fy = this.player.y - 56;
+      const fw = 112;
+      const fh = 104;
+      const corner = 16;
+
+      ctx.strokeStyle = this.cameraFlash > 0.2 ? "#fef08a" : "rgba(255, 255, 255, 0.9)";
+      ctx.lineWidth = 3;
+      ctx.beginPath();
+      // Top-left bracket
+      ctx.moveTo(fx, fy + corner);
+      ctx.lineTo(fx, fy);
+      ctx.lineTo(fx + corner, fy);
+      // Top-right bracket
+      ctx.moveTo(fx + fw - corner, fy);
+      ctx.lineTo(fx + fw, fy);
+      ctx.lineTo(fx + fw, fy + corner);
+      // Bottom-left bracket
+      ctx.moveTo(fx, fy + fh - corner);
+      ctx.lineTo(fx, fy + fh);
+      ctx.lineTo(fx + corner, fy + fh);
+      // Bottom-right bracket
+      ctx.moveTo(fx + fw - corner, fy + fh);
+      ctx.lineTo(fx + fw, fy + fh);
+      ctx.lineTo(fx + fw, fy + fh - corner);
+      ctx.stroke();
+
+      // Viewfinder REC / Photo Counter badge
+      ctx.fillStyle = "#fde047";
+      ctx.font = "bold 11px monospace";
+      ctx.fillText(`📸 PHOTO ${Math.min(3, this.shutterCount + 1)}/3`, fx + 8, fy - 8);
+      ctx.restore();
+    }
+
     if (this.cameraFlash > 0) {
       ctx.save();
-      ctx.fillStyle = `rgba(255, 255, 255, ${this.cameraFlash * 0.75})`;
+      ctx.fillStyle = `rgba(255, 255, 255, ${this.cameraFlash * 0.78})`;
       ctx.fillRect(0, 0, this.width, this.height);
       ctx.restore();
     }
