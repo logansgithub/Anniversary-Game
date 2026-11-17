@@ -1,0 +1,516 @@
+@import url('https://fonts.googleapis.com/css2?family=Nunito:wght@500;700;800;900&family=Playfair+Display:ital,wght@0,700;1,600&display=swap');
+
+:root {
+  --bg-deep: #0f172a;
+  --bg-card: rgba(30, 41, 59, 0.92);
+  --rose-primary: #f43f5e;
+  --rose-soft: #fda4af;
+  --gold-warm: #facc15;
+  --text-light: #f8fafc;
+  --text-muted: #cbd5e1;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Nunito', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: radial-gradient(circle at top, #1e1b4b 0%, #0f172a 65%, #020617 100%);
+  color: var(--text-light);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 14px 18px;
+  overflow-x: hidden;
+}
+
+.app-shell {
+  width: 100%;
+  max-width: 1000px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Header & Level Switcher */
+.top-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(15, 23, 42, 0.82);
+  border: 1px solid rgba(244, 114, 182, 0.28);
+  border-radius: 16px;
+  padding: 10px 18px;
+  backdrop-filter: blur(10px);
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.brand-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.brand-heart {
+  font-size: 1.5rem;
+  filter: drop-shadow(0 0 8px rgba(244, 63, 94, 0.6));
+}
+
+.brand-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #fff1f2;
+}
+
+.level-pills {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.level-pill {
+  background: rgba(51, 65, 85, 0.7);
+  color: #e2e8f0;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 6px 11px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.level-pill:hover {
+  background: rgba(244, 63, 94, 0.25);
+  border-color: #f472b6;
+}
+
+.level-pill.active {
+  background: linear-gradient(135deg, #ec4899, #f43f5e);
+  color: #ffffff;
+  border-color: #fda4af;
+  box-shadow: 0 0 12px rgba(244, 63, 94, 0.45);
+}
+
+.nav-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.score-pill {
+  background: rgba(250, 204, 21, 0.14);
+  border: 1px solid rgba(250, 204, 21, 0.45);
+  color: #fef08a;
+  padding: 5px 12px;
+  border-radius: 999px;
+  font-weight: 800;
+  font-size: 0.85rem;
+}
+
+.btn-mute {
+  background: rgba(51, 65, 85, 0.8);
+  color: #f8fafc;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+/* HUD Banner */
+.hud-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(30, 41, 59, 0.88);
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 14px;
+  padding: 10px 16px;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hud-left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hud-level-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.hud-badge {
+  background: #f43f5e;
+  color: #fff;
+  font-size: 0.72rem;
+  font-weight: 900;
+  padding: 2px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.hud-title {
+  font-weight: 800;
+  font-size: 1rem;
+  color: #fff1f2;
+}
+
+.hud-objective {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+
+.hud-right {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.fondue-tracker {
+  background: rgba(124, 45, 18, 0.55);
+  border: 1px solid #fb923c;
+  padding: 5px 10px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.fondue-tracker .need {
+  opacity: 0.32;
+  filter: grayscale(1);
+}
+
+.fondue-tracker .got {
+  opacity: 1;
+  transform: scale(1.12);
+}
+
+.powerup-btn {
+  background: rgba(51, 65, 85, 0.9);
+  color: #f8fafc;
+  border: 2px solid #94a3b8;
+  padding: 7px 14px;
+  border-radius: 12px;
+  font-weight: 800;
+  font-size: 0.84rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.powerup-btn.ready-pulse {
+  background: linear-gradient(135deg, #f59e0b, #eab308);
+  color: #0f172a;
+  border-color: #fef08a;
+  animation: pulseGlow 1.1s infinite alternate;
+}
+
+.powerup-btn.active-aura {
+  background: linear-gradient(135deg, #ec4899, #8b5cf6);
+  color: #ffffff;
+  border-color: #f9a8d4;
+  box-shadow: 0 0 18px rgba(236, 72, 153, 0.7);
+}
+
+@keyframes pulseGlow {
+  0% { transform: scale(1); box-shadow: 0 0 8px rgba(250, 204, 21, 0.5); }
+  100% { transform: scale(1.05); box-shadow: 0 0 20px rgba(250, 204, 21, 0.95); }
+}
+
+/* Canvas Stage & Overlays */
+.stage-wrapper {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 960 / 540;
+  border-radius: 18px;
+  overflow: hidden;
+  border: 2px solid rgba(244, 114, 182, 0.35);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.65);
+  background: #0f172a;
+}
+
+#gameCanvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.86);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 20;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.modal-card {
+  background: linear-gradient(160deg, rgba(30, 41, 59, 0.97), rgba(15, 23, 42, 0.98));
+  border: 1.5px solid rgba(244, 114, 182, 0.45);
+  border-radius: 22px;
+  padding: 26px 30px;
+  max-width: 780px;
+  width: 100%;
+  max-height: 92%;
+  overflow-y: auto;
+  text-align: center;
+  box-shadow: 0 20px 45px rgba(0, 0, 0, 0.6);
+  position: relative;
+}
+
+.modal-badge {
+  display: inline-block;
+  background: rgba(244, 63, 94, 0.2);
+  border: 1px solid #f43f5e;
+  color: #fda4af;
+  padding: 4px 14px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 10px;
+}
+
+.modal-title {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-size: 2rem;
+  color: #fff1f2;
+  margin-bottom: 8px;
+}
+
+.modal-subtitle {
+  color: #cbd5e1;
+  font-size: 0.96rem;
+  line-height: 1.55;
+  margin-bottom: 18px;
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(195px, 1fr));
+  gap: 12px;
+  margin: 16px 0 22px;
+  text-align: left;
+}
+
+.control-box {
+  background: rgba(15, 23, 42, 0.65);
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+
+.control-box h4 {
+  color: #fde047;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+}
+
+.control-box p {
+  font-size: 0.8rem;
+  color: #cbd5e1;
+  line-height: 1.4;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #f43f5e, #ec4899);
+  color: #ffffff;
+  border: none;
+  padding: 13px 28px;
+  border-radius: 999px;
+  font-size: 1rem;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 8px 24px rgba(244, 63, 94, 0.45);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(244, 63, 94, 0.65);
+}
+
+/* Polaroid Gallery (Level 1 Chloe's Mom Photos & Finale) */
+.polaroid-grid {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 14px 0 20px;
+}
+
+.polaroid-card {
+  background: #fffbeb;
+  color: #1e293b;
+  padding: 8px 8px 12px;
+  border-radius: 8px;
+  width: 210px;
+  box-shadow: 0 10px 22px rgba(0, 0, 0, 0.45);
+  transition: transform 0.2s ease;
+}
+
+.polaroid-card:hover {
+  transform: scale(1.04) rotate(0deg) !important;
+}
+
+.polaroid-media {
+  width: 100%;
+  height: 135px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: #e2e8f0;
+  margin-bottom: 6px;
+}
+
+.polaroid-media canvas,
+.polaroid-media img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.polaroid-tag {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 800;
+  color: #e11d48;
+  text-transform: uppercase;
+}
+
+.polaroid-caption {
+  font-size: 0.74rem;
+  font-weight: 700;
+  color: #334155;
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+.scene-vignette {
+  background: rgba(15, 23, 42, 0.75);
+  border: 1px solid rgba(250, 204, 21, 0.35);
+  border-radius: 14px;
+  padding: 16px;
+  margin: 14px 0 20px;
+}
+
+.vignette-icons {
+  font-size: 1.8rem;
+  margin-bottom: 8px;
+}
+
+.vignette-caption {
+  font-size: 0.9rem;
+  color: #fef08a;
+  line-height: 1.45;
+}
+
+/* Victory Love Letter & Gift Reveal */
+.love-letter {
+  background: rgba(15, 23, 42, 0.7);
+  border-left: 4px solid #f43f5e;
+  border-radius: 12px;
+  padding: 14px 18px;
+  text-align: left;
+  margin: 12px 0 16px;
+}
+
+.love-letter p {
+  font-size: 0.88rem;
+  color: #e2e8f0;
+  line-height: 1.55;
+  margin-bottom: 8px;
+}
+
+.love-letter .letter-signature {
+  font-family: 'Playfair Display', Georgia, serif;
+  font-style: italic;
+  color: #fda4af;
+  font-size: 1rem;
+  text-align: right;
+  margin-bottom: 0;
+}
+
+.gift-card {
+  background: linear-gradient(135deg, rgba(131, 24, 67, 0.85), rgba(88, 28, 135, 0.85));
+  border: 2px solid #fde047;
+  border-radius: 16px;
+  padding: 16px 20px;
+  margin: 14px 0;
+  box-shadow: 0 0 25px rgba(250, 204, 21, 0.35);
+}
+
+.gift-card h3 {
+  color: #fef08a;
+  font-size: 1.2rem;
+  margin-bottom: 4px;
+}
+
+.gift-card .gift-details {
+  white-space: pre-line;
+  font-weight: 800;
+  color: #ffffff;
+  margin: 10px 0;
+  font-size: 0.95rem;
+}
+
+.gift-card .gift-note {
+  font-size: 0.74rem;
+  color: #cbd5e1;
+}
+
+.footer-hint {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+  color: #94a3b8;
+  padding: 4px 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Confetti Animation */
+#confettiContainer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -14px;
+  width: 10px;
+  height: 16px;
+  border-radius: 3px;
+  opacity: 0.9;
+  animation: confettiFall linear infinite;
+}
+
+@keyframes confettiFall {
+  0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(540px) rotate(720deg); opacity: 0.2; }
+}

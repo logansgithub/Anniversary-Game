@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Our Journey Together — Anniversary Mini Web Game</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <!-- Matter.js 2D Physics Engine -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/matter-js/0.19.0/matter.min.js"></script>
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Navigation & Quick Level Selector -->
+    <header class="top-nav">
+      <div class="brand-group">
+        <span class="brand-heart">💖</span>
+        <span class="brand-title">Our Journey Together</span>
+      </div>
+
+      <nav class="level-pills" aria-label="Level Select">
+        <button class="level-pill active" data-level-index="0">1. Ice Rink ⛸️</button>
+        <button class="level-pill" data-level-index="1">2. Ren Faire 🏰</button>
+        <button class="level-pill" data-level-index="2">3. Ski Trip ⛷️</button>
+        <button class="level-pill" data-level-index="3">4. Boston 🛝</button>
+      </nav>
+
+      <div class="nav-right">
+        <div class="score-pill">✨ Score: <span id="hudScore">0</span></div>
+        <button id="muteBtn" class="btn-mute" type="button">🔊 Audio On</button>
+      </div>
+    </header>
+
+    <!-- Live Gameplay HUD -->
+    <section class="hud-bar" aria-label="Gameplay HUD">
+      <div class="hud-left">
+        <div class="hud-level-row">
+          <span id="hudLevelNumber" class="hud-badge">Level 1</span>
+          <span id="hudLevelTitle" class="hud-title">The First Date — Ice Skating Rink</span>
+        </div>
+        <p id="hudObjective" class="hud-objective">Navigate across the crowded ice rink to reach the Hot Cocoa Bench!</p>
+      </div>
+
+      <div class="hud-right">
+        <div id="fondueHudTracker" class="fondue-tracker hidden"></div>
+        <button id="powerUpTriggerBtn" class="powerup-btn" type="button">
+          ❄️ Charges: 0 / 2
+        </button>
+        <span id="hudPowerTimer" style="font-size:0.76rem; color:#fde047; font-weight:800;">Collect 2</span>
+      </div>
+    </section>
+
+    <!-- Main 2D Canvas Stage & Story Modals -->
+    <main class="stage-wrapper">
+      <canvas id="gameCanvas" width="960" height="540"></canvas>
+
+      <!-- 1. TITLE SCREEN OVERLAY -->
+      <div id="titleOverlay" class="overlay">
+        <div class="modal-card">
+          <span class="modal-badge">A 4-Level Interactive Anniversary Adventure</span>
+          <h1 class="modal-title">Our Journey Together</h1>
+          <p class="modal-subtitle">
+            Guide <strong>Jana</strong> across 4 unforgettable chapters of our story—from skating hand-in-hand on our first date to Renaissance Faire magic, snowy ski trip fondue, and flying down the Boston Cop Slide!
+          </p>
+
+          <div class="controls-grid">
+            <div class="control-box">
+              <h4>🎮 Dual Movement Controls</h4>
+              <p>Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to steer, glide, and weave through obstacles with realistic physics inertia.</p>
+            </div>
+            <div class="control-box">
+              <h4>⚡ Spacebar Power-Ups</h4>
+              <p>Gather <strong>2 Collectibles</strong> &amp; press <strong>SPACE</strong> (or touch a golden Power-Up token) for a 5-second aura!</p>
+            </div>
+            <div class="control-box">
+              <h4>📸 4 Chapters of Memories</h4>
+              <p>1. Ice Rink &amp; Chloe's Mom's Photos<br/>2. Ren Faire &amp; Warlock Spell<br/>3. Ski Trip Fondue &amp; Reindeer TV<br/>4. Boston Cop Slide &amp; Julia's Dinner</p>
+            </div>
+          </div>
+
+          <button id="startGameBtn" class="btn-primary" type="button">
+            Start Our Adventure 💖
+          </button>
+        </div>
+      </div>
+
+      <!-- 2. LEVEL COMPLETE & MEMORY TRANSITION OVERLAY -->
+      <div id="transitionOverlay" class="overlay hidden">
+        <div class="modal-card">
+          <span id="transitionBadge" class="modal-badge">Level 1 Complete</span>
+          <h2 id="transitionTitle" class="modal-title">Chloe's Mom Snapped Our Photos! 📸</h2>
+          <p id="transitionStory" class="modal-subtitle"></p>
+
+          <!-- Level 1 Real Photo / Polaroid Showcase -->
+          <div id="level1PhotoShowcase">
+            <div id="polaroidGrid" class="polaroid-grid"></div>
+          </div>
+
+          <!-- Levels 2, 3, 4 Vignette Showcase -->
+          <div id="levelSceneBanner" class="hidden"></div>
+
+          <button id="nextLevelBtn" class="btn-primary" type="button">
+            Continue Journey ➡️
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. GRAND FINALE VICTORY & GIFT REVEAL OVERLAY -->
+      <div id="victoryOverlay" class="overlay hidden">
+        <div id="confettiContainer"></div>
+        <div class="modal-card">
+          <span id="victoryScore" class="modal-badge">Final Journey Score: 0 pts</span>
+          <h2 id="victoryHeadline" class="modal-title">Happy Anniversary, Jana! 💖</h2>
+          <p id="victorySubheadline" class="modal-subtitle"></p>
+
+          <div id="victoryLetter" class="love-letter"></div>
+
+          <!-- Gift Reveal Section -->
+          <button id="unwrapGiftBtn" class="btn-primary" type="button" style="margin-bottom: 14px;">
+            🎁 Click to Unwrap Your Anniversary Gift Reveal
+          </button>
+
+          <div id="giftRevealCard" class="gift-card hidden">
+            <h3 id="giftTitle"></h3>
+            <p id="giftSubtitle" style="color:#fde047; font-size:0.86rem;"></p>
+            <p id="giftDetails" class="gift-details"></p>
+            <p id="giftFooterNote" class="gift-note"></p>
+          </div>
+
+          <div id="victoryPolaroidGrid" class="polaroid-grid"></div>
+
+          <button id="replayGameBtn" class="btn-primary" type="button" style="background: rgba(51,65,85,0.9); box-shadow:none; border: 1px solid #94a3b8;">
+            🔄 Play Our Journey Again
+          </button>
+        </div>
+      </div>
+    </main>
+
+    <!-- Bottom Hint Footer -->
+    <footer class="footer-hint">
+      <span>💡 <strong>Tip:</strong> <span id="hudPowerHint">Collect 2 Snowflakes + Press SPACE (or touch your Partner Token) to hold hands!</span></span>
+      <span>Controls: <strong>WASD / Arrow Keys</strong> + <strong>SPACEBAR</strong></span>
+    </footer>
+  </div>
+
+  <!-- Game Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/sprites.js"></script>
+  <script src="js/levels.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>
