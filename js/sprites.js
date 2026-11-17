@@ -1549,9 +1549,14 @@ class SpriteRenderer {
     ctx.drawImage(tile, -offset, 0, width, height);
     ctx.drawImage(tile, width - offset, 0, width, height);
 
-    // On Stage 4, draw the Cop Slide on the left during the opening launch
-    if (levelId === 4 && state && state.stageDistance < 260) {
-      this.drawCopSlide(ctx, 68 - state.stageDistance * 0.4, height * 0.52);
+    // On Stage 4, draw the Giant Metallic Cop Slide during the 5-second intro slide animation
+    // or as it scrolls off-screen right after the intro finishes!
+    if (levelId === 4 && state) {
+      if (state.isIntroSlide) {
+        this.drawCopSlideIntro(ctx, 0, height, time);
+      } else if (state.stageDistance < 340) {
+        this.drawCopSlideIntro(ctx, -state.stageDistance, height, time);
+      }
     }
 
     // Draw the Vertical Finish Line when it enters from the right side
@@ -1876,63 +1881,104 @@ class SpriteRenderer {
     ctx.restore();
   }
 
-  drawCopSlide(ctx, x, y) {
-    ctx.save();
-    ctx.translate(x, y);
-    // Iconic shiny metallic Boston Cop Slide at the start of Level 4
-    const grad = ctx.createLinearGradient(-40, -60, 30, 40);
-    grad.addColorStop(0, "#e2e8f0");
-    grad.addColorStop(0.5, "#94a3b8");
-    grad.addColorStop(1, "#cbd5e1");
-    ctx.fillStyle = grad;
-    ctx.strokeStyle = "#f8fafc";
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.moveTo(-45, -55);
-    ctx.quadraticCurveTo(-10, 0, 35, 20);
-    ctx.lineTo(35, 42);
-    ctx.quadraticCurveTo(-15, 25, -45, -30);
-    ctx.closePath();
-    ctx.fill();
-    ctx.stroke();
-    ctx.restore();
+  /**
+   * Computes the exact (x, y, angle) position along the Giant Boston Cop Slide
+   * S-curve for progress t in [0, 1] during the 5-second Level 4 intro animation.
+   */
+  getCopSlidePoint(t, height) {
+    const clamped = Math.max(0, Math.min(1, t));
+    // Cubic Bezier curve from top tower (62, 132) down the steep metallic chute to (220, height * 0.54)
+    const p0 = { x: 62, y: 132 };
+    const p1 = { x: 118, y: 138 };
+    const p2 = { x: 125, y: height * 0.54 + 6 };
+    const p3 = { x: 220, y: height * 0.54 };
+
+    const u = 1 - clamped;
+    const x =
+      u * u * u * p0.x +
+      3 * u * u * clamped * p1.x +
+      3 * u * clamped * clamped * p2.x +
+      clamped * clamped * clamped * p3.x;
+    const y =
+      u * u * u * p0.y +
+      3 * u * u * clamped * p1.y +
+      3 * u * clamped * clamped * p2.y +
+      clamped * clamped * clamped * p3.y;
+
+    // Derivative for slide tilt angle
+    const dx =
+      3 * u * u * (p1.x - p0.x) +
+      6 * u * clamped * (p2.x - p1.x) +
+      3 * clamped * clamped * (p3.x - p2.x);
+    const dy =
+      3 * u * u * (p1.y - p0.y) +
+      6 * u * clamped * (p2.y - p1.y) +
+      3 * clamped * clamped * (p3.y - p2.y);
+
+    const angle = Math.atan2(dy, dx) * 0.45;
+    return { x, y, angle };
   }
 
-  drawDinnerWithJuliaGoal(ctx, x, y, time) {
+  /**
+   * Draws the iconic gleaming stainless-steel Boston Cop Slide structure
+   * for the 5-second Level 4 opening slide sequence.
+   */
+  drawCopSlideIntro(ctx, offsetX, height, time) {
     ctx.save();
-    ctx.translate(x, y);
+    ctx.translate(offsetX, 0);
 
-    const pulse = 1 + Math.sin(time * 5) * 0.06;
-    ctx.fillStyle = "rgba(244, 114, 182, 0.28)";
-    ctx.strokeStyle = "#f472b6";
-    ctx.lineWidth = 3;
+    const endY = height * 0.54;
+
+    // Support pillars under the slide tower
+    ctx.fillStyle = "#475569";
+    ctx.fillRect(34, 130, 14, endY - 110);
+    ctx.fillRect(82, 150, 12, endY - 130);
+
+    // Outer Stainless Steel Chute Shadow / Base
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 48;
+    ctx.lineCap = "round";
     ctx.beginPath();
-    ctx.arc(0, 0, 56 * pulse, 0, Math.PI * 2);
+    ctx.moveTo(62, 136);
+    ctx.bezierCurveTo(118, 142, 125, endY + 10, 220, endY + 4);
+    ctx.stroke();
+
+    // Metallic Chute Bed with Polished Steel Gradient
+    const metalGrad = ctx.createLinearGradient(50, 120, 230, endY);
+    metalGrad.addColorStop(0, "#f8fafc");
+    metalGrad.addColorStop(0.3, "#cbd5e1");
+    metalGrad.addColorStop(0.6, "#94a3b8");
+    metalGrad.addColorStop(0.85, "#e2e8f0");
+    metalGrad.addColorStop(1, "#cbd5e1");
+    ctx.strokeStyle = metalGrad;
+    ctx.lineWidth = 38;
+    ctx.beginPath();
+    ctx.moveTo(62, 136);
+    ctx.bezierCurveTo(118, 142, 125, endY + 10, 220, endY + 4);
+    ctx.stroke();
+
+    // Specular Center Glint Line down the chute
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(62, 132);
+    ctx.bezierCurveTo(118, 138, 125, endY + 6, 220, endY);
+    ctx.stroke();
+
+    // Top Tubular Tunnel Entrance Hood
+    ctx.fillStyle = "#94a3b8";
+    ctx.strokeStyle = "#f8fafc";
+    ctx.lineWidth = 2.5;
+    this.roundRect(ctx, 28, 102, 54, 46, 16);
     ctx.fill();
     ctx.stroke();
 
-    // Cozy Bistro Table with white tablecloth & candle
-    ctx.fillStyle = "#fff1f2";
+    // Dark tunnel opening arch
+    ctx.fillStyle = "#1e293b";
     ctx.beginPath();
-    ctx.arc(0, 4, 26, 0, Math.PI * 2);
+    ctx.ellipse(76, 128, 10, 18, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Friend Julia waving happily at the dinner table!
-    ctx.fillStyle = "#ec4899";
-    this.roundRect(ctx, -10, -28, 20, 14, 5);
-    ctx.fill();
-    ctx.fillStyle = "#fed7aa";
-    ctx.beginPath();
-    ctx.arc(0, -36, 8.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#92400e";
-    ctx.beginPath();
-    ctx.arc(0, -38, 9, Math.PI * 0.9, Math.PI * 2.1);
-    ctx.fill();
-
-    ctx.font = "18px sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("🕯️🍝🥂", 0, 10);
     ctx.restore();
   }
 
@@ -1958,35 +2004,41 @@ class SpriteRenderer {
 
   /**
    * Renders a charming illustrated Polaroid photo onto a <canvas>
-   * for Level 1 ("Chloe's mom snaps several photos of us") if a real photo
-   * file hasn't been placed in assets/photos/ yet.
+   * for any of the 4 levels until the user uploads their personal photo files
+   * into assets/photos/ (level1_photo1.jpg .. level4_photo3.jpg).
    */
-  renderPolaroidIllustration(canvas, sceneType = "rink_hug", time = 1) {
+  renderPolaroidIllustration(canvas, sceneType = "rink_hug", time = 1, levelId = 1) {
     const ctx = canvas.getContext("2d");
     const w = canvas.width;
     const h = canvas.height;
 
     const grad = ctx.createLinearGradient(0, 0, 0, h);
-    if (sceneType === "rink_hug") {
+    if (levelId === 1) {
       grad.addColorStop(0, "#1e3a8a");
       grad.addColorStop(0.55, "#3b82f6");
       grad.addColorStop(0.56, "#dbeafe");
       grad.addColorStop(1, "#eff6ff");
-    } else if (sceneType === "cocoa_bench") {
-      grad.addColorStop(0, "#451a03");
-      grad.addColorStop(0.6, "#78350f");
-      grad.addColorStop(1, "#fef3c7");
+    } else if (levelId === 2) {
+      grad.addColorStop(0, "#fef3c7");
+      grad.addColorStop(0.5, "#fde68a");
+      grad.addColorStop(0.52, "#15803d");
+      grad.addColorStop(1, "#166534");
+    } else if (levelId === 3) {
+      grad.addColorStop(0, "#0284c7");
+      grad.addColorStop(0.5, "#bae6fd");
+      grad.addColorStop(0.52, "#f8fafc");
+      grad.addColorStop(1, "#e0f2fe");
     } else {
-      grad.addColorStop(0, "#311042");
-      grad.addColorStop(0.55, "#701a75");
-      grad.addColorStop(1, "#fce7f3");
+      grad.addColorStop(0, "#1e1b4b");
+      grad.addColorStop(0.55, "#312e81");
+      grad.addColorStop(1, "#4c1d95");
     }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
 
     // Twinkling bokeh lights in background
     const colors = ["#fde047", "#f472b6", "#38bdf8", "#ffffff"];
-    for (let i = 0; i < 16; i++) {
+    for (let i = 0; i < 14; i++) {
       ctx.fillStyle = colors[i % colors.length];
       ctx.globalAlpha = 0.45;
       ctx.beginPath();
@@ -1995,30 +2047,40 @@ class SpriteRenderer {
     }
     ctx.globalAlpha = 1;
 
-    // Draw Partner & Jana side-by-side smiling for Chloe's Mom's camera!
+    // Draw Partner & Jana side-by-side in level-appropriate outfits!
     ctx.save();
     ctx.translate(w * 0.41, h * 0.68);
-    this.drawPartner(ctx, 0, 0, time, false, 1.35);
+    this.drawPartner(ctx, 0, 0, time, levelId === 2, 1.3);
     ctx.restore();
 
     ctx.save();
     ctx.translate(w * 0.59, h * 0.70);
     this.drawJana(ctx, 0, 0, {
-      levelId: 1,
+      levelId,
       time,
-      hasFlowerCrown: false,
+      hasFlowerCrown: levelId === 2,
       facing: -1,
-      customScale: 1.35
+      customScale: 1.3
     });
     ctx.restore();
 
-    // Floating heart & cocoa icons
-    ctx.font = "22px sans-serif";
+    // Level-specific keepsake icons
+    ctx.font = "20px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("💖", w * 0.5, h * 0.34);
-    if (sceneType === "cocoa_bench") {
-      ctx.fillText("☕", w * 0.35, h * 0.78);
-      ctx.fillText("☕", w * 0.66, h * 0.78);
+    ctx.fillText("💖", w * 0.5, h * 0.32);
+
+    if (levelId === 1) {
+      ctx.fillText("⛸️", w * 0.24, h * 0.78);
+      ctx.fillText("☕", w * 0.76, h * 0.78);
+    } else if (levelId === 2) {
+      ctx.fillText("👑", w * 0.24, h * 0.78);
+      ctx.fillText("🌸", w * 0.76, h * 0.78);
+    } else if (levelId === 3) {
+      ctx.fillText("🫕", w * 0.24, h * 0.78);
+      ctx.fillText("🍓", w * 0.76, h * 0.78);
+    } else {
+      ctx.fillText("🛝", w * 0.24, h * 0.78);
+      ctx.fillText("🥂", w * 0.76, h * 0.78);
     }
   }
 

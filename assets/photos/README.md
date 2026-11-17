@@ -1,9 +1,25 @@
-# Real Photos Directory (`assets/photos/`)
+# Personal Photos Directory (`assets/photos/`)
 
-Drop your real photos from the First Date (or any favorite memories) into this folder to display them in **Level 1 (when Chloe's mom snaps your photos at the Hot Cocoa Bench)** and on the **Grand Finale Victory Screen**:
+Every level displays **3 personal photos** on its **Level Complete Celebration Screen**. Drop your photos into this `assets/photos/` folder using the filenames below (or customize the paths and captions inside [`js/config.js`](../../js/config.js)):
 
-- `first_date_1.jpg`
-- `first_date_2.jpg`
-- `first_date_3.jpg`
+### Level 1 (Indoor Ice Skating Rink)
+- `level1_photo1.jpg`
+- `level1_photo2.jpg`
+- `level1_photo3.jpg`
 
-You can also customize the file names, captions, and dates anytime inside [`js/config.js`](../../js/config.js) under `level1Photos`. If any image file is not present yet, the game automatically draws a custom keepsake illustration on the Polaroid card!
+### Level 2 (Renaissance Faire)
+- `level2_photo1.jpg`
+- `level2_photo2.jpg`
+- `level2_photo3.jpg`
+
+### Level 3 (Winter Ski Trip & Fondue)
+- `level3_photo1.jpg`
+- `level3_photo2.jpg`
+- `level3_photo3.jpg`
+
+### Level 4 (Boston Promenade & Dinner)
+- `level4_photo1.jpg`
+- `level4_photo2.jpg`
+- `level4_photo3.jpg`
+
+*(Until each photo file is uploaded, the game automatically displays a custom level-themed Polaroid illustration as a placeholder!)*

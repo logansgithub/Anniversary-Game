@@ -49,10 +49,12 @@ class AnniversaryGame {
     this.isInvincible = false;
     this.warlockShockwave = 0;
 
-    // Cutscene / Camera Flash State (Stage 1 Chloe's Mom photo shoot)
+    // Cutscene / Camera Flash State (Stage 1 Chloe's Mom photo shoot & Stage 4 Cop Slide Intro)
     this.cutsceneTimer = 0;
     this.cameraFlash = 0;
     this.shutterCount = 0;
+    this.introSlideTimer = 0;
+    this.introSlideDuration = 5.0;
 
     // Fondue Ingredient Tracker (Stage 3)
     this.fondueCollected = {
@@ -279,17 +281,25 @@ class AnniversaryGame {
       };
     }
 
-    if (levelCfg.id === 4) {
-      this.addFloatingText(this.player.x + 60, this.player.y - 35, "🛝 WEEEE!", "#fde047");
-    }
-
     // Hide all modal overlays
     document.getElementById("titleOverlay").classList.add("hidden");
     document.getElementById("gameOverOverlay").classList.add("hidden");
     document.getElementById("transitionOverlay").classList.add("hidden");
     document.getElementById("victoryOverlay").classList.add("hidden");
 
-    this.state = "PLAYING";
+    if (levelCfg.id === 4) {
+      // Start Level 4 with a 5-second animation of going down the Giant Cop Slide!
+      this.state = "INTRO_SLIDE";
+      this.introSlideDuration = 5.0;
+      this.introSlideTimer = 5.0;
+      const topPt = this.sprites.getCopSlidePoint(0, this.height);
+      this.player.x = topPt.x;
+      this.player.y = topPt.y;
+      this.addFloatingText(topPt.x + 85, topPt.y - 25, "🛝 Here we go!!", "#fde047");
+    } else {
+      this.state = "PLAYING";
+    }
+
     window.soundManager.startBGM(levelCfg.id);
     this.updateHUD();
   }
@@ -383,6 +393,11 @@ class AnniversaryGame {
   update(dt) {
     this.time += dt;
     const levelCfg = this.config.levels[this.currentLevelIndex];
+
+    if (this.state === "INTRO_SLIDE") {
+      this.updateIntroSlide(dt);
+      return;
+    }
 
     if (this.state === "CUTSCENE") {
       this.updateCutscene(dt);
@@ -733,6 +748,65 @@ class AnniversaryGame {
     }
   }
 
+  /**
+   * 5-second opening animation at the beginning of Level 4 where Jana slides
+   * down the gleaming Boston Cop Slide before normal gameplay begins.
+   */
+  updateIntroSlide(dt) {
+    this.introSlideTimer = Math.max(0, this.introSlideTimer - dt);
+    const elapsed = this.introSlideDuration - this.introSlideTimer; // 0.0 -> 5.0s
+    const norm = elapsed / this.introSlideDuration; // 0.0 -> 1.0
+
+    if (norm < 0.14) {
+      // Phase 1 (0.0s - 0.7s): Poised at the top tunnel entrance of the Cop Slide
+      const pt = this.sprites.getCopSlidePoint(0, this.height);
+      this.player.x = pt.x;
+      this.player.y = pt.y + Math.sin(elapsed * 14) * 2;
+      this.player.spinAngle = 0.08;
+    } else if (norm < 0.86) {
+      // Phase 2 (0.7s - 4.3s): Zooming down the winding metallic Cop Slide chute!
+      const slideNorm = (norm - 0.14) / 0.72;
+      // Ease-in-out curve for realistic slide acceleration
+      const eased = slideNorm < 0.5
+        ? 2 * slideNorm * slideNorm
+        : 1 - Math.pow(-2 * slideNorm + 2, 2) / 2;
+
+      const pt = this.sprites.getCopSlidePoint(eased, this.height);
+      this.player.x = pt.x;
+      this.player.y = pt.y;
+      this.player.spinAngle = pt.angle;
+
+      if (Math.random() < 0.45) {
+        this.spawnParticle(this.player.x - 18, this.player.y + 8, "✨");
+      }
+      if (Math.abs(elapsed - 1.6) < dt * 0.6) {
+        this.addFloatingText(this.player.x + 55, this.player.y - 38, "🛝 WEEEEEEE!!", "#fde047");
+      }
+      if (Math.abs(elapsed - 3.1) < dt * 0.6) {
+        this.addFloatingText(this.player.x + 65, this.player.y - 38, "💨 SO FAST!!", "#38bdf8");
+      }
+    } else {
+      // Phase 3 (4.3s - 5.0s): Shoot out the bottom of the slide and settle at startPos (x = 120)
+      const settleNorm = (norm - 0.86) / 0.14;
+      const endPt = this.sprites.getCopSlidePoint(1, this.height);
+      this.player.x = endPt.x + (120 - endPt.x) * settleNorm;
+      this.player.y = endPt.y;
+      this.player.spinAngle = endPt.angle * (1 - settleNorm);
+    }
+
+    this.updateParticles(dt);
+
+    if (this.introSlideTimer <= 0) {
+      this.player.x = 120;
+      this.player.y = this.height * 0.54;
+      this.player.vx = 0;
+      this.player.vy = 0;
+      this.player.spinAngle = 0;
+      this.state = "PLAYING";
+      this.addFloatingText(this.player.x + 50, this.player.y - 42, "✨ GO!", "#4ade80");
+    }
+  }
+
   openLevelTransitionModal() {
     this.state = "TRANSITION";
     window.soundManager.playLevelComplete();
@@ -743,46 +817,23 @@ class AnniversaryGame {
     document.getElementById("transitionStory").textContent = levelCfg.completionStory;
     document.getElementById("nextLevelBtn").textContent = levelCfg.nextButtonText;
 
+    // Display the 3 personal photo Polaroid cards on EVERY level's celebration screen!
     const photoShowcase = document.getElementById("level1PhotoShowcase");
     const sceneBanner = document.getElementById("levelSceneBanner");
 
-    if (levelCfg.id === 1) {
-      photoShowcase.classList.remove("hidden");
-      sceneBanner.classList.add("hidden");
-      this.populatePolaroidGallery("polaroidGrid");
-    } else {
-      photoShowcase.classList.add("hidden");
-      sceneBanner.classList.remove("hidden");
-      if (levelCfg.id === 2) {
-        sceneBanner.innerHTML = `
-          <div class="scene-vignette">
-            <div class="vignette-icons">👑 ⚔️ 🧙‍♂️ 🌸 🪕</div>
-            <p class="vignette-caption">"By royal decree of the Renaissance Court, Lady Jana & her Black-Caped Warlock are granted safe passage and eternal merriment!"</p>
-          </div>`;
-      } else if (levelCfg.id === 3) {
-        sceneBanner.innerHTML = `
-          <div class="scene-vignette">
-            <div class="vignette-icons">🍓 🍌 🍡 🍫 ➡️ 🫕 &nbsp;|&nbsp; 📺 🦌💨🦌💨</div>
-            <p class="vignette-caption">Inside the warm Ski Lodge: Strawberries, bananas, and marshmallows swirl into warm melted chocolate fondue while the reindeers race across the TV screen!</p>
-          </div>`;
-      } else {
-        sceneBanner.innerHTML = `
-          <div class="scene-vignette">
-            <div class="vignette-icons">🛝 ⚾ 🧙‍♀️ 🧋 🕯️🥂</div>
-            <p class="vignette-caption">From flying down the Boston Cop Slide to clinking glasses at dinner with Julia—all 4 stages complete!</p>
-          </div>`;
-      }
-    }
+    photoShowcase.classList.remove("hidden");
+    sceneBanner.classList.add("hidden");
+    this.populatePolaroidGallery("polaroidGrid", levelCfg.photos || this.config.level1Photos, levelCfg.id);
 
     document.getElementById("transitionOverlay").classList.remove("hidden");
   }
 
-  populatePolaroidGallery(containerId) {
+  populatePolaroidGallery(containerId, photosList = null, defaultLevelId = 1) {
     const container = document.getElementById(containerId);
     if (!container) return;
     container.innerHTML = "";
 
-    const photos = this.config.level1Photos || [];
+    const photos = photosList || this.config.level1Photos || [];
     photos.forEach((photo, idx) => {
       const card = document.createElement("div");
       card.className = "polaroid-card";
@@ -794,7 +845,12 @@ class AnniversaryGame {
       const fallbackCanvas = document.createElement("canvas");
       fallbackCanvas.width = 240;
       fallbackCanvas.height = 175;
-      this.sprites.renderPolaroidIllustration(fallbackCanvas, photo.sceneType, idx + 1);
+      this.sprites.renderPolaroidIllustration(
+        fallbackCanvas,
+        photo.sceneType,
+        idx + 1,
+        photo.levelId || defaultLevelId
+      );
       mediaWrap.appendChild(fallbackCanvas);
 
       if (photo.imageSrc) {
@@ -809,7 +865,7 @@ class AnniversaryGame {
 
       const tag = document.createElement("span");
       tag.className = "polaroid-tag";
-      tag.textContent = photo.dateTag || `Memory #${idx + 1}`;
+      tag.textContent = photo.dateTag || `Photo #${idx + 1}`;
 
       const cap = document.createElement("p");
       cap.className = "polaroid-caption";
@@ -979,7 +1035,8 @@ class AnniversaryGame {
       finishLineActive: this.finishLine.active,
       finishLineX: this.finishLine.x,
       cameraFlash: this.cameraFlash,
-      isCutscene: this.state === "CUTSCENE"
+      isCutscene: this.state === "CUTSCENE",
+      isIntroSlide: this.state === "INTRO_SLIDE"
     });
 
     // 2. Draw Collectibles & Power-Up Tokens scrolling right-to-left

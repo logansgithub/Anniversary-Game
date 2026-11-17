@@ -92,6 +92,8 @@ window.GAME_CONFIG = {
   ],
 
   // 4-Level Physics & Post-Level Reveal Definitions (Hidden until completed!)
+  // Drop your 3 personal photos for each level into assets/photos/ (e.g. level1_photo1.jpg .. level4_photo3.jpg)
+  // or edit the imageSrc paths below!
   levels: [
     {
       id: 1,
@@ -105,8 +107,31 @@ window.GAME_CONFIG = {
         continuousForward: 0
       },
       completionHeadline: "Level Complete! Chloe's Mom Snapped Our Photos! 📸",
-      completionStory: "You crossed the finish line across the ice rink to the Hot Cocoa Bench—and right on cue, Chloe's mom popped out with her camera to capture the sweetest moments!",
-      nextButtonText: "Next Level ➡️"
+      completionStory: "You crossed the finish line across the indoor ice rink to the Hot Cocoa Bench—and right on cue, Chloe's mom popped out with her camera to capture the sweetest moments!",
+      nextButtonText: "Next Level ➡️",
+      photos: [
+        {
+          imageSrc: "assets/photos/level1_photo1.jpg",
+          caption: "Skating hand-in-hand at the indoor ice rink",
+          dateTag: "Stage I • Photo 1",
+          sceneType: "rink_hug",
+          levelId: 1
+        },
+        {
+          imageSrc: "assets/photos/level1_photo2.jpg",
+          caption: "Warming up at the Hot Cocoa Bench (Photo by Chloe's Mom!)",
+          dateTag: "Stage I • Photo 2",
+          sceneType: "cocoa_bench",
+          levelId: 1
+        },
+        {
+          imageSrc: "assets/photos/level1_photo3.jpg",
+          caption: "Big smiles and the beginning of our adventure",
+          dateTag: "Stage I • Photo 3",
+          sceneType: "snowy_selfie",
+          levelId: 1
+        }
+      ]
     },
     {
       id: 2,
@@ -121,7 +146,30 @@ window.GAME_CONFIG = {
       },
       completionHeadline: "Level Complete! The King's Royal Blessing! 👑",
       completionStory: "With flower crowns braided, bard lutes strumming, and a black-caped warlock clearing the way with arcane magic, you crossed the finish line into the Royal Court and received the King's blessing!",
-      nextButtonText: "Next Level ➡️"
+      nextButtonText: "Next Level ➡️",
+      photos: [
+        {
+          imageSrc: "assets/photos/level2_photo1.jpg",
+          caption: "Wandering the Renaissance Faire grounds together",
+          dateTag: "Stage II • Photo 1",
+          sceneType: "ren_crown",
+          levelId: 2
+        },
+        {
+          imageSrc: "assets/photos/level2_photo2.jpg",
+          caption: "Flower crowns, turkey legs, and festival magic",
+          dateTag: "Stage II • Photo 2",
+          sceneType: "ren_warlock",
+          levelId: 2
+        },
+        {
+          imageSrc: "assets/photos/level2_photo3.jpg",
+          caption: "Cheering at the Royal Court stage",
+          dateTag: "Stage II • Photo 3",
+          sceneType: "ren_court",
+          levelId: 2
+        }
+      ]
     },
     {
       id: 3,
@@ -136,7 +184,30 @@ window.GAME_CONFIG = {
       },
       completionHeadline: "Level Complete! Fondue Night & Reindeer Racing! 🍫🦌",
       completionStory: "You crossed the finish line into the warm Ski Lodge! Inside, the strawberries, bananas, and marshmallows are dipping into bubbling melted chocolate while the reindeers race neck-and-neck on the lodge TV!",
-      nextButtonText: "Next Level ➡️"
+      nextButtonText: "Next Level ➡️",
+      photos: [
+        {
+          imageSrc: "assets/photos/level3_photo1.jpg",
+          caption: "Carving down the snowy mountain slopes",
+          dateTag: "Stage III • Photo 1",
+          sceneType: "ski_slope",
+          levelId: 3
+        },
+        {
+          imageSrc: "assets/photos/level3_photo2.jpg",
+          caption: "Cozy chocolate fondue with strawberries, bananas & marshmallows",
+          dateTag: "Stage III • Photo 2",
+          sceneType: "ski_fondue",
+          levelId: 3
+        },
+        {
+          imageSrc: "assets/photos/level3_photo3.jpg",
+          caption: "Warming up in the Ski Lodge watching reindeer races",
+          dateTag: "Stage III • Photo 3",
+          sceneType: "ski_lodge",
+          levelId: 3
+        }
+      ]
     },
     {
       id: 4,
@@ -151,7 +222,30 @@ window.GAME_CONFIG = {
       },
       completionHeadline: "Level Complete! Dinner with Julia in Boston! 🥂✨",
       completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you crossed the finish line for dinner with Julia!",
-      nextButtonText: "Next Level ➡️"
+      nextButtonText: "Next Level ➡️",
+      photos: [
+        {
+          imageSrc: "assets/photos/level4_photo1.jpg",
+          caption: "Exploring Boston, Fenway, Salem & the Cop Slide",
+          dateTag: "Stage IV • Photo 1",
+          sceneType: "boston_slide",
+          levelId: 4
+        },
+        {
+          imageSrc: "assets/photos/level4_photo2.jpg",
+          caption: "Fueled by Tatte lattes along the Freedom Trail",
+          dateTag: "Stage IV • Photo 2",
+          sceneType: "boston_tatte",
+          levelId: 4
+        },
+        {
+          imageSrc: "assets/photos/level4_photo3.jpg",
+          caption: "Celebrating over dinner in Boston with Julia",
+          dateTag: "Stage IV • Photo 3",
+          sceneType: "boston_dinner",
+          levelId: 4
+        }
+      ]
     }
   ],
 
