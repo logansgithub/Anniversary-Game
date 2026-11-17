@@ -11,6 +11,7 @@ class SpriteRenderer {
   constructor(config) {
     this.config = config;
     this.images = {};
+    this.bgTiles = {};
     this.preloadExternalImages();
   }
 
@@ -785,88 +786,108 @@ class SpriteRenderer {
   }
 
   /**
-   * Renders the rich themed background and finish-line landmarks for each level
+   * Builds and caches a seamlessly tileable 960x540 horizontal side-view
+   * background image for the given level so left & right edges match seamlessly.
    */
-  drawEnvironment(ctx, width, height, levelId, time, state) {
-    ctx.save();
+  getLoopingBackgroundTile(levelId, width, height) {
+    const bgKeys = {
+      1: "bg_ice_rink",
+      2: "bg_ren_faire",
+      3: "bg_ski_slopes",
+      4: "bg_boston_promenade"
+    };
+    const extImg = this.images[bgKeys[levelId]];
+    if (extImg && extImg.complete && extImg.naturalWidth > 0) {
+      return extImg;
+    }
+
+    if (this.bgTiles[levelId]) {
+      return this.bgTiles[levelId];
+    }
+
+    const tile = document.createElement("canvas");
+    tile.width = width;
+    tile.height = height;
+    const tctx = tile.getContext("2d");
 
     if (levelId === 1) {
-      // LEVEL 1: ICE SKATING RINK
-      const skyGrad = ctx.createLinearGradient(0, 0, 0, height);
+      // STAGE 1: Seamless Side-Scrolling Winter Ice Rink
+      const skyGrad = tctx.createLinearGradient(0, 0, 0, height);
       skyGrad.addColorStop(0, "#0f172a");
       skyGrad.addColorStop(0.22, "#1e3a5f");
       skyGrad.addColorStop(0.23, "#dbeafe");
       skyGrad.addColorStop(1, "#eff6ff");
-      ctx.fillStyle = skyGrad;
-      ctx.fillRect(0, 0, width, height);
+      tctx.fillStyle = skyGrad;
+      tctx.fillRect(0, 0, width, height);
 
-      // Distant snowy pine trees & stars above the rink
-      ctx.fillStyle = "#fef9c3";
+      // Stars across night sky
+      tctx.fillStyle = "#fef9c3";
       for (let i = 0; i < 24; i++) {
-        const sx = (i * 47) % width;
-        const sy = 12 + ((i * 23) % 75);
-        const r = 1 + (Math.sin(time * 4 + i) + 1) * 0.8;
-        ctx.beginPath();
-        ctx.arc(sx, sy, r, 0, Math.PI * 2);
-        ctx.fill();
+        tctx.beginPath();
+        tctx.arc((i * 40) + 18, 16 + ((i * 23) % 72), 1.6, 0, Math.PI * 2);
+        tctx.fill();
       }
 
-      // Cozy Hot Cocoa Cabin in the background
-      this.drawHotCocoaCabin(ctx, width - 190, 32);
+      // Repeating distant snowy pine trees & cabin silhouettes
+      for (let x = 40; x < width; x += 120) {
+        this.drawPineTree(tctx, x, 112);
+        this.drawPineTree(tctx, x + 55, 114);
+      }
+      this.drawHotCocoaCabin(tctx, 380, 32);
 
-      // Ice Rink surface with subtle sheen arcs
-      ctx.fillStyle = "#e0f2fe";
-      this.roundRect(ctx, 26, 110, width - 52, height - 136, 28);
-      ctx.fill();
+      // Continuous horizontal Ice Rink surface
+      tctx.fillStyle = "#e0f2fe";
+      tctx.fillRect(0, 112, width, height - 138);
 
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.7)";
-      ctx.lineWidth = 2;
-      for (let i = 0; i < 5; i++) {
-        ctx.beginPath();
-        ctx.arc(160 + i * 165, 290 + (i % 2) * 60, 65, 0.2, 2.2);
-        ctx.stroke();
+      // Ice skate carving sheen arcs
+      tctx.strokeStyle = "rgba(255, 255, 255, 0.78)";
+      tctx.lineWidth = 2;
+      for (let i = 0; i < 6; i++) {
+        tctx.beginPath();
+        tctx.arc(80 + i * 160, 250 + (i % 2) * 90, 60, 0.2, 2.2);
+        tctx.stroke();
       }
 
-      // Rink wooden barrier & twinkling fairy lights
-      ctx.strokeStyle = "#92400e";
-      ctx.lineWidth = 7;
-      this.roundRect(ctx, 26, 110, width - 52, height - 136, 28);
-      ctx.stroke();
+      // Top & bottom continuous wooden rink barriers
+      tctx.fillStyle = "#92400e";
+      tctx.fillRect(0, 108, width, 7);
+      tctx.fillRect(0, height - 28, width, 7);
 
+      // Fairy light bulbs every 32px (960 is divisible by 32 -> seamless loop!)
       const fairyColors = ["#fde047", "#f472b6", "#38bdf8", "#4ade80"];
-      for (let x = 45; x < width - 45; x += 36) {
-        const c = fairyColors[Math.floor(x / 36) % fairyColors.length];
-        const glow = 0.5 + 0.5 * Math.sin(time * 6 + x);
-        ctx.fillStyle = c;
-        ctx.globalAlpha = 0.55 + glow * 0.45;
-        ctx.beginPath();
-        ctx.arc(x, 110, 4.2, 0, Math.PI * 2);
-        ctx.arc(x, height - 26, 3.8, 0, Math.PI * 2);
-        ctx.fill();
+      for (let x = 16; x < width; x += 32) {
+        tctx.fillStyle = fairyColors[Math.floor(x / 32) % fairyColors.length];
+        tctx.beginPath();
+        tctx.arc(x, 111, 4, 0, Math.PI * 2);
+        tctx.arc(x, height - 25, 3.8, 0, Math.PI * 2);
+        tctx.fill();
       }
-      ctx.globalAlpha = 1;
-
-      // Goal: Hot Cocoa Bench & Chloe's Mom on the far right!
-      this.drawHotCocoaBenchGoal(ctx, width - 92, height * 0.54, time, state);
 
     } else if (levelId === 2) {
-      // LEVEL 2: RENAISSANCE FAIRE
-      const grassGrad = ctx.createLinearGradient(0, 0, 0, height);
+      // STAGE 2: Seamless Side-Scrolling Renaissance Faire Grounds
+      const grassGrad = tctx.createLinearGradient(0, 0, 0, height);
       grassGrad.addColorStop(0, "#fef3c7");
-      grassGrad.addColorStop(0.2, "#fde68a");
-      grassGrad.addColorStop(0.21, "#15803d");
+      grassGrad.addColorStop(0.21, "#fde68a");
+      grassGrad.addColorStop(0.22, "#15803d");
       grassGrad.addColorStop(1, "#166534");
-      ctx.fillStyle = grassGrad;
-      ctx.fillRect(0, 0, width, height);
+      tctx.fillStyle = grassGrad;
+      tctx.fillRect(0, 0, width, height);
 
-      // Golden dirt festival path
-      ctx.fillStyle = "#d97706";
-      ctx.globalAlpha = 0.32;
-      this.roundRect(ctx, 30, 165, width - 60, height - 220, 40);
-      ctx.fill();
-      ctx.globalAlpha = 1;
+      // Continuous dirt festival jousting lane
+      tctx.fillStyle = "rgba(217, 119, 6, 0.34)";
+      tctx.fillRect(0, 155, width, height - 200);
 
-      // Medieval Festival Tents & Banners along top
+      // Wooden jousting fence rails along top and bottom
+      tctx.strokeStyle = "#78350f";
+      tctx.lineWidth = 5;
+      tctx.beginPath();
+      tctx.moveTo(0, 120);
+      tctx.lineTo(width, 120);
+      tctx.moveTo(0, height - 26);
+      tctx.lineTo(width, height - 26);
+      tctx.stroke();
+
+      // Medieval Festival Tents spaced evenly every 240px (960 / 4 = 240 -> seamless!)
       const tentColors = [
         ["#dc2626", "#fef08a"],
         ["#2563eb", "#f8fafc"],
@@ -874,157 +895,165 @@ class SpriteRenderer {
         ["#059669", "#fef9c3"]
       ];
       for (let i = 0; i < 4; i++) {
-        const tx = 110 + i * 210;
+        const tx = 120 + i * 240;
         const [c1, c2] = tentColors[i];
-        ctx.fillStyle = c1;
-        ctx.beginPath();
-        ctx.moveTo(tx - 45, 110);
-        ctx.lineTo(tx, 52);
-        ctx.lineTo(tx + 45, 110);
-        ctx.closePath();
-        ctx.fill();
+        tctx.fillStyle = c1;
+        tctx.beginPath();
+        tctx.moveTo(tx - 45, 115);
+        tctx.lineTo(tx, 52);
+        tctx.lineTo(tx + 45, 115);
+        tctx.closePath();
+        tctx.fill();
 
-        ctx.fillStyle = c2;
-        ctx.beginPath();
-        ctx.moveTo(tx - 18, 110);
-        ctx.lineTo(tx, 52);
-        ctx.lineTo(tx + 18, 110);
-        ctx.closePath();
-        ctx.fill();
+        tctx.fillStyle = c2;
+        tctx.beginPath();
+        tctx.moveTo(tx - 18, 115);
+        tctx.lineTo(tx, 52);
+        tctx.lineTo(tx + 18, 115);
+        tctx.closePath();
+        tctx.fill();
 
-        // Pennant flag
-        ctx.fillStyle = c1;
-        ctx.fillRect(tx, 34, 18, 10);
+        tctx.fillStyle = c1;
+        tctx.fillRect(tx, 36, 18, 10);
       }
-
-      // Wandering Bard strumming lute on the sideline
-      ctx.font = "22px sans-serif";
-      ctx.fillText("🧝‍♂️🪕", 85, 138);
-      ctx.fillText("🎪", 310, 138);
-      ctx.fillText("🛡️⚔️", 540, 138);
-
-      // Goal: Royal Court Stage on the far right
-      this.drawRoyalCourtGoal(ctx, width - 92, height * 0.54, time);
 
     } else if (levelId === 3) {
-      // LEVEL 3: WINTER GETAWAY — SKI TRIP
-      const slopeGrad = ctx.createLinearGradient(0, 0, width, height);
+      // STAGE 3: Seamless Side-Scrolling Snowy Ski Mountain
+      const slopeGrad = tctx.createLinearGradient(0, 0, 0, height);
       slopeGrad.addColorStop(0, "#bae6fd");
-      slopeGrad.addColorStop(0.2, "#e0f2fe");
+      slopeGrad.addColorStop(0.22, "#e0f2fe");
       slopeGrad.addColorStop(1, "#f8fafc");
-      ctx.fillStyle = slopeGrad;
-      ctx.fillRect(0, 0, width, height);
+      tctx.fillStyle = slopeGrad;
+      tctx.fillRect(0, 0, width, height);
 
-      // Distant Alpine Mountain Peaks
-      ctx.fillStyle = "#64748b";
-      ctx.beginPath();
-      ctx.moveTo(0, 110);
-      ctx.lineTo(140, 28);
-      ctx.lineTo(290, 110);
-      ctx.lineTo(460, 18);
-      ctx.lineTo(650, 110);
-      ctx.lineTo(820, 35);
-      ctx.lineTo(width, 110);
-      ctx.closePath();
-      ctx.fill();
+      // Seamless Mountain Range (starts and ends at y = 112 at x = 0 and x = 960!)
+      tctx.fillStyle = "#64748b";
+      tctx.beginPath();
+      tctx.moveTo(0, 112);
+      tctx.lineTo(160, 30);
+      tctx.lineTo(320, 112);
+      tctx.lineTo(480, 20);
+      tctx.lineTo(640, 112);
+      tctx.lineTo(800, 34);
+      tctx.lineTo(width, 112);
+      tctx.closePath();
+      tctx.fill();
 
-      // Overhead Ski Lift Cable & Moving Chairs
-      ctx.strokeStyle = "#334155";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(0, 75);
-      ctx.lineTo(width, 45);
-      ctx.stroke();
+      // Continuous Horizontal Ski Lift Cable
+      tctx.strokeStyle = "#334155";
+      tctx.lineWidth = 2;
+      tctx.beginPath();
+      tctx.moveTo(0, 62);
+      tctx.lineTo(width, 62);
+      tctx.stroke();
 
-      for (let i = 0; i < 4; i++) {
-        const cx = ((i * 250 + time * 45) % (width + 60)) - 30;
-        const cy = 75 - (cx / width) * 30;
-        ctx.strokeStyle = "#1e293b";
-        ctx.beginPath();
-        ctx.moveTo(cx, cy);
-        ctx.lineTo(cx, cy + 16);
-        ctx.stroke();
-        ctx.fillStyle = "#ef4444";
-        ctx.fillRect(cx - 8, cy + 16, 16, 6);
+      for (let x = 120; x < width; x += 240) {
+        tctx.strokeStyle = "#1e293b";
+        tctx.beginPath();
+        tctx.moveTo(x, 62);
+        tctx.lineTo(x, 78);
+        tctx.stroke();
+        tctx.fillStyle = "#ef4444";
+        tctx.fillRect(x - 8, 78, 16, 6);
       }
 
-      // Pine trees lining top & bottom of slope
-      for (let x = 50; x < width - 130; x += 110) {
-        this.drawPineTree(ctx, x, 122);
-        this.drawPineTree(ctx, x + 45, height - 24);
+      // Pine trees spaced every 120px along top & bottom edges
+      for (let x = 60; x < width; x += 120) {
+        this.drawPineTree(tctx, x, 122);
+        this.drawPineTree(tctx, x, height - 18);
       }
-
-      // Goal: Warm Ski Lodge with Fondue & Reindeer Racing TV!
-      this.drawSkiLodgeGoal(ctx, width - 95, height * 0.54, time);
 
     } else {
-      // LEVEL 4: BOSTON PROMENADE (Cop Slide -> Fenway -> Salem -> Freedom Trail -> MFA -> Dinner with Julia)
-      const cityGrad = ctx.createLinearGradient(0, 0, 0, height);
+      // STAGE 4: Seamless Side-Scrolling Boston Promenade
+      const cityGrad = tctx.createLinearGradient(0, 0, 0, height);
       cityGrad.addColorStop(0, "#1e1b4b");
-      cityGrad.addColorStop(0.24, "#312e81");
-      cityGrad.addColorStop(0.25, "#334155");
+      cityGrad.addColorStop(0.23, "#312e81");
+      cityGrad.addColorStop(0.24, "#334155");
       cityGrad.addColorStop(1, "#1e293b");
-      ctx.fillStyle = cityGrad;
-      ctx.fillRect(0, 0, width, height);
+      tctx.fillStyle = cityGrad;
+      tctx.fillRect(0, 0, width, height);
 
-      // Iconic Red-Brick FREEDOM TRAIL winding across the promenade!
-      ctx.strokeStyle = "#dc2626";
-      ctx.lineWidth = 10;
-      ctx.setLineDash([18, 6]);
-      ctx.beginPath();
-      ctx.moveTo(60, height * 0.55);
-      ctx.bezierCurveTo(320, height * 0.35, 580, height * 0.75, width - 90, height * 0.54);
-      ctx.stroke();
-      ctx.setLineDash([]);
+      // Seamless Red-Brick Freedom Trail running horizontally (same Y at x=0 and x=960)
+      tctx.strokeStyle = "#dc2626";
+      tctx.lineWidth = 10;
+      tctx.setLineDash([18, 6]);
+      tctx.beginPath();
+      tctx.moveTo(0, height * 0.56);
+      tctx.bezierCurveTo(width * 0.33, height * 0.38, width * 0.66, height * 0.74, width, height * 0.56);
+      tctx.stroke();
+      tctx.setLineDash([]);
 
-      // Boston Landmarks along the skyline backdrop:
-      // 1. Famous Metallic Cop Slide on the left start!
-      this.drawCopSlide(ctx, 68, height * 0.52);
+      // Boston Skyline Landmarks repeating across the scrolling backdrop:
+      // Fenway Green Monster wall
+      tctx.fillStyle = "#14532d";
+      tctx.strokeStyle = "#dcfce7";
+      tctx.lineWidth = 2;
+      tctx.fillRect(140, 32, 165, 78);
+      tctx.strokeRect(140, 32, 165, 78);
+      tctx.fillStyle = "#fde047";
+      tctx.font = "bold 11px monospace";
+      tctx.textAlign = "center";
+      tctx.fillText("BOS  9  |  NY  2", 222, 74);
 
-      // 2. Fenway Park "Green Monster" Wall
-      ctx.fillStyle = "#14532d";
-      ctx.strokeStyle = "#dcfce7";
-      ctx.lineWidth = 2;
-      ctx.fillRect(210, 32, 165, 78);
-      ctx.strokeRect(210, 32, 165, 78);
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "bold 12px monospace";
-      ctx.textAlign = "center";
-      ctx.fillText("FENWAY PARK", 292, 54);
-      ctx.font = "10px monospace";
-      ctx.fillStyle = "#fde047";
-      ctx.fillText("BOS  9  |  NY  2", 292, 74);
-      ctx.fillText("GREEN MONSTER", 292, 95);
+      // Salem Timber Gables
+      tctx.fillStyle = "#27272a";
+      tctx.beginPath();
+      tctx.moveTo(410, 110);
+      tctx.lineTo(410, 62);
+      tctx.lineTo(445, 28);
+      tctx.lineTo(480, 62);
+      tctx.lineTo(515, 32);
+      tctx.lineTo(550, 62);
+      tctx.lineTo(550, 110);
+      tctx.closePath();
+      tctx.fill();
 
-      // 3. Salem Witch House (Dark Timber Gables)
-      ctx.fillStyle = "#27272a";
-      ctx.beginPath();
-      ctx.moveTo(430, 110);
-      ctx.lineTo(430, 62);
-      ctx.lineTo(465, 28);
-      ctx.lineTo(500, 62);
-      ctx.lineTo(535, 32);
-      ctx.lineTo(570, 62);
-      ctx.lineTo(570, 110);
-      ctx.closePath();
-      ctx.fill();
-      ctx.fillStyle = "#f59e0b";
-      ctx.font = "bold 10px sans-serif";
-      ctx.fillText("SALEM 1692", 500, 98);
-
-      // 4. Museum of Fine Arts (MFA Classical Columns)
-      ctx.fillStyle = "#e2e8f0";
-      ctx.fillRect(625, 42, 145, 68);
-      ctx.fillStyle = "#94a3b8";
+      // Museum of Fine Arts Classical Columns
+      tctx.fillStyle = "#e2e8f0";
+      tctx.fillRect(670, 42, 145, 68);
+      tctx.fillStyle = "#94a3b8";
       for (let c = 0; c < 4; c++) {
-        ctx.fillRect(640 + c * 34, 58, 10, 52);
+        tctx.fillRect(685 + c * 34, 58, 10, 52);
       }
-      ctx.fillStyle = "#1e293b";
-      ctx.font = "bold 10px serif";
-      ctx.fillText("MUSEUM OF FINE ARTS", 697, 53);
+    }
 
-      // Goal: Candlelit Dinner Table with her friend Julia!
-      this.drawDinnerWithJuliaGoal(ctx, width - 92, height * 0.54, time);
+    this.bgTiles[levelId] = tile;
+    return tile;
+  }
+
+  /**
+   * Renders the seamlessly looping right-to-left scrolling background
+   * and (when nearing the end of the stage) the scrolling finish landmark.
+   */
+  drawEnvironment(ctx, width, height, levelId, time, state) {
+    ctx.save();
+
+    const tile = this.getLoopingBackgroundTile(levelId, width, height);
+    const rawOffset = (state && typeof state.scrollOffset === "number") ? state.scrollOffset : 0;
+    const offset = ((rawOffset % width) + width) % width;
+
+    // Draw two copies side-by-side for a 100% seamless right-to-left horizontal loop
+    ctx.drawImage(tile, -offset, 0, width, height);
+    ctx.drawImage(tile, width - offset, 0, width, height);
+
+    // On Stage 4, draw the Cop Slide on the left during the opening launch
+    if (levelId === 4 && state && state.stageDistance < 260) {
+      this.drawCopSlide(ctx, 68 - state.stageDistance * 0.4, height * 0.52);
+    }
+
+    // Draw the Stage Goal when it scrolls into view on the right side
+    if (state && state.goalActive && typeof state.goalX === "number") {
+      const gx = state.goalX;
+      const gy = state.goalY || height * 0.54;
+      if (levelId === 1) {
+        this.drawHotCocoaBenchGoal(ctx, gx, gy, time, state);
+      } else if (levelId === 2) {
+        this.drawRoyalCourtGoal(ctx, gx, gy, time);
+      } else if (levelId === 3) {
+        this.drawSkiLodgeGoal(ctx, gx, gy, time);
+      } else {
+        this.drawDinnerWithJuliaGoal(ctx, gx, gy, time);
+      }
     }
 
     ctx.restore();

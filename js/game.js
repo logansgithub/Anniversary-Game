@@ -1,7 +1,13 @@
 /**
  * ============================================================================
- * OUR JOURNEY TOGETHER - CORE MATTER.JS PHYSICS & GAMEPLAY ENGINE
+ * 2D HORIZONTAL SIDE-SCROLLING EVASION ENGINE
  * ============================================================================
+ * - Flat 2D side-view perspective with seamlessly looping right-to-left background.
+ * - Player starts on the left side and moves seamlessly Up, Down, Left, Right
+ *   via Arrow Keys or WASD, constrained within the visible canvas area.
+ * - Obstacles spawn along the right edge at varied Y positions, move steadily
+ *   left, increase in speed/spawn-rate over time, and are destroyed off-screen.
+ * - Tight AABB bounding-box collision triggers a 'Game Over' screen with 'Restart'.
  */
 
 class AnniversaryGame {
@@ -14,12 +20,26 @@ class AnniversaryGame {
     this.width = this.canvas.width;
     this.height = this.canvas.height;
 
-    // Game State
-    this.state = "TITLE"; // TITLE, PLAYING, CUTSCENE, TRANSITION, VICTORY
-    this.currentLevelIndex = 0; // 0..3 -> Levels 1..4
+    // Game States: TITLE, PLAYING, GAMEOVER, CUTSCENE, TRANSITION, VICTORY
+    this.state = "TITLE";
+    this.currentLevelIndex = 0; // 0..3 -> Stages I..IV
     this.score = 0;
+    this.stageStartScore = 0;
     this.time = 0;
     this.lastFrameTime = performance.now();
+
+    // Horizontal Side-Scrolling State
+    this.scrollOffset = 0;
+    this.stageDistance = 0;
+    this.stageElapsed = 0;
+    this.stageDurationSec = 28;
+    this.baseScrollSpeed = 210;
+    this.baseSpawnInterval = 1.15;
+    this.minSpawnInterval = 0.52;
+    this.obstacleSpawnTimer = 0.6;
+    this.collectibleSpawnTimer = 1.4;
+    this.powerTokenSpawnTimer = 7.5;
+    this.lastObstacleY = null;
 
     // Universal Power-Up Lifecycle State
     this.powerCharges = 0;
@@ -27,16 +47,14 @@ class AnniversaryGame {
     this.powerUpTimer = 0;
     this.powerUpDuration = this.config.powerUp.durationSeconds || 5.0;
     this.isInvincible = false;
-
-    // Warlock Magic Shockwave Effect (Level 2)
     this.warlockShockwave = 0;
 
-    // Cutscene / Camera Flash State (Level 1 Chloe's Mom photo shoot)
+    // Cutscene / Camera Flash State (Stage 1 Chloe's Mom photo shoot)
     this.cutsceneTimer = 0;
     this.cameraFlash = 0;
     this.shutterCount = 0;
 
-    // Fondue Ingredient Tracker (Level 3)
+    // Fondue Ingredient Tracker (Stage 3)
     this.fondueCollected = {
       strawberry: false,
       banana: false,
@@ -44,33 +62,38 @@ class AnniversaryGame {
       chocolate: false
     };
 
-    // Player Entity (backed by Matter.js body when Matter is available)
+    // Player Entity (Positioned on the left side of the screen, with tight AABB hitbox)
     this.player = {
-      x: 82,
-      y: 280,
+      x: 120,
+      y: 270,
       vx: 0,
       vy: 0,
-      radius: 17,
+      radius: 16,
+      hitboxW: 22, // Tight bounding-box width
+      hitboxH: 30, // Tight bounding-box height
       facing: 1,
-      slipTimer: 0,      // Running/sliding in place animation timer
-      confuseTimer: 0,   // Jester juggling pin confusion timer
-      spinTimer: 0,      // Ice patch spin-out timer
+      slipTimer: 0,
+      confuseTimer: 0,
+      spinTimer: 0,
       spinAngle: 0,
-      hasFlowerCrown: false,
-      copSlideLaunchTimer: 0
+      hasFlowerCrown: false
     };
 
-    this.matterEngine = null;
-    this.matterPlayerBody = null;
-
-    // Active Level Entities
+    // Active Side-Scrolling Entities
     this.obstacles = [];
     this.collectibles = [];
     this.particles = [];
     this.floatingTexts = [];
-    this.goalZone = { x: 868, y: 290, radius: 52 };
 
-    // Dual Input Handler State (WASD + Arrow Keys + Spacebar)
+    // Goal Landmark (Spawns on the right edge when stage timer completes)
+    this.goalZone = {
+      active: false,
+      x: this.width + 80,
+      y: this.height * 0.54,
+      radius: 52
+    };
+
+    // Dual Input Handler State (WASD + Arrow Keys)
     this.keys = {
       up: false,
       down: false,
@@ -78,26 +101,9 @@ class AnniversaryGame {
       right: false
     };
 
-    this.initMatterPhysics();
     this.bindEvents();
     this.updateHUD();
     requestAnimationFrame(ts => this.gameLoop(ts));
-  }
-
-  initMatterPhysics() {
-    if (window.Matter) {
-      const { Engine, Bodies, Composite } = window.Matter;
-      this.matterEngine = Engine.create();
-      this.matterEngine.gravity.x = 0;
-      this.matterEngine.gravity.y = 0;
-
-      this.matterPlayerBody = Bodies.circle(this.player.x, this.player.y, this.player.radius, {
-        frictionAir: 0.018,
-        restitution: 0.7,
-        label: "JanaPlayer"
-      });
-      Composite.add(this.matterEngine.world, [this.matterPlayerBody]);
-    }
   }
 
   bindEvents() {
@@ -123,7 +129,13 @@ class AnniversaryGame {
         e.preventDefault();
         if (this.state === "PLAYING") {
           this.tryActivatePowerUp();
+        } else if (this.state === "GAMEOVER") {
+          this.restartCurrentStage();
         }
+      }
+      if (code === "Enter" && this.state === "GAMEOVER") {
+        e.preventDefault();
+        this.restartCurrentStage();
       }
     });
 
@@ -135,7 +147,7 @@ class AnniversaryGame {
       if (["ArrowRight", "KeyD"].includes(code)) this.keys.right = false;
     });
 
-    // UI Buttons
+    // Start Button
     const startBtn = document.getElementById("startGameBtn");
     if (startBtn) {
       startBtn.addEventListener("click", () => {
@@ -144,6 +156,15 @@ class AnniversaryGame {
       });
     }
 
+    // Game Over -> Restart Button
+    const restartBtn = document.getElementById("restartBtn");
+    if (restartBtn) {
+      restartBtn.addEventListener("click", () => {
+        this.restartCurrentStage();
+      });
+    }
+
+    // Next Stage Button
     const nextLevelBtn = document.getElementById("nextLevelBtn");
     if (nextLevelBtn) {
       nextLevelBtn.addEventListener("click", () => {
@@ -155,6 +176,7 @@ class AnniversaryGame {
       });
     }
 
+    // Play Again Button (from Victory screen)
     const replayBtn = document.getElementById("replayGameBtn");
     if (replayBtn) {
       replayBtn.addEventListener("click", () => {
@@ -164,6 +186,7 @@ class AnniversaryGame {
       });
     }
 
+    // Gift Reveal Unwrap Button
     const unwrapGiftBtn = document.getElementById("unwrapGiftBtn");
     if (unwrapGiftBtn) {
       unwrapGiftBtn.addEventListener("click", () => {
@@ -177,6 +200,7 @@ class AnniversaryGame {
       });
     }
 
+    // HUD Power-Up Button
     const powerUpHudBtn = document.getElementById("powerUpTriggerBtn");
     if (powerUpHudBtn) {
       powerUpHudBtn.addEventListener("click", () => {
@@ -186,6 +210,7 @@ class AnniversaryGame {
       });
     }
 
+    // Audio Mute Toggle
     const muteBtn = document.getElementById("muteBtn");
     if (muteBtn) {
       muteBtn.addEventListener("click", () => {
@@ -197,31 +222,46 @@ class AnniversaryGame {
 
   startLevel(levelIndex) {
     this.currentLevelIndex = levelIndex;
+    this.stageStartScore = this.score;
     const levelCfg = this.config.levels[levelIndex];
-    const built = window.LevelBuilder.build(levelCfg.id, this.width, this.height);
+    const stageSettings = window.LevelBuilder.getStageSettings(levelCfg.id, this.width, this.height);
 
-    this.obstacles = built.obstacles;
-    this.collectibles = built.collectibles;
-    this.goalZone = built.goalZone;
+    // Clear active arrays
+    this.obstacles = [];
+    this.collectibles = [];
     this.particles = [];
     this.floatingTexts = [];
 
-    this.player.x = built.startPos.x;
-    this.player.y = built.startPos.y;
-    this.player.vx = levelCfg.id === 4 ? 6.2 : 0; // Level 4 launches right off the Cop Slide!
+    // Position player on the left side of the screen
+    this.player.x = stageSettings.startPos.x;
+    this.player.y = stageSettings.startPos.y;
+    this.player.vx = 0;
     this.player.vy = 0;
     this.player.facing = 1;
     this.player.slipTimer = 0;
     this.player.confuseTimer = 0;
     this.player.spinTimer = 0;
     this.player.spinAngle = 0;
-    this.player.copSlideLaunchTimer = levelCfg.id === 4 ? 2.4 : 0;
 
-    if (this.matterPlayerBody && window.Matter) {
-      window.Matter.Body.setPosition(this.matterPlayerBody, { x: this.player.x, y: this.player.y });
-      window.Matter.Body.setVelocity(this.matterPlayerBody, { x: this.player.vx, y: this.player.vy });
-      this.matterPlayerBody.frictionAir = levelCfg.physics.frictionAir;
-    }
+    // Reset side-scrolling parameters
+    this.scrollOffset = 0;
+    this.stageDistance = 0;
+    this.stageElapsed = 0;
+    this.stageDurationSec = stageSettings.stageDurationSec;
+    this.baseScrollSpeed = stageSettings.baseScrollSpeed;
+    this.baseSpawnInterval = stageSettings.baseSpawnInterval;
+    this.minSpawnInterval = stageSettings.minSpawnInterval;
+    this.obstacleSpawnTimer = 0.75;
+    this.collectibleSpawnTimer = 1.2;
+    this.powerTokenSpawnTimer = 6.5;
+    this.lastObstacleY = null;
+
+    this.goalZone = {
+      active: false,
+      x: this.width + 80,
+      y: this.height * 0.54,
+      radius: 52
+    };
 
     this.powerCharges = 0;
     this.powerUpTimer = 0;
@@ -240,11 +280,12 @@ class AnniversaryGame {
     }
 
     if (levelCfg.id === 4) {
-      this.addFloatingText(this.player.x + 70, this.player.y - 35, "🛝 WEEEE!", "#fde047");
+      this.addFloatingText(this.player.x + 60, this.player.y - 35, "🛝 WEEEE!", "#fde047");
     }
 
-    // Hide overlays
+    // Hide all modal overlays
     document.getElementById("titleOverlay").classList.add("hidden");
+    document.getElementById("gameOverOverlay").classList.add("hidden");
     document.getElementById("transitionOverlay").classList.add("hidden");
     document.getElementById("victoryOverlay").classList.add("hidden");
 
@@ -253,15 +294,47 @@ class AnniversaryGame {
     this.updateHUD();
   }
 
+  restartCurrentStage() {
+    this.score = this.stageStartScore;
+    this.startLevel(this.currentLevelIndex);
+  }
+
+  triggerGameOver() {
+    this.state = "GAMEOVER";
+    window.soundManager.playBump();
+    this.player.slipTimer = 0.9; // Show running/sliding animation frame on impact
+    const overlay = document.getElementById("gameOverOverlay");
+    if (overlay) {
+      overlay.classList.remove("hidden");
+    }
+  }
+
   /**
-   * Universal Power-Up Lifecycle Activation (Spacebar or touching Partner/Power Token)
+   * Tight Axis-Aligned Bounding-Box (AABB) Collision Detection
+   */
+  checkTightAABB(ax, ay, aw, ah, bx, by, bw, bh) {
+    const aLeft = ax - aw * 0.5;
+    const aRight = ax + aw * 0.5;
+    const aTop = ay - ah * 0.5;
+    const aBottom = ay + ah * 0.5;
+
+    const bLeft = bx - bw * 0.5;
+    const bRight = bx + bw * 0.5;
+    const bTop = by - bh * 0.5;
+    const bBottom = by + bh * 0.5;
+
+    return aLeft < bRight && aRight > bLeft && aTop < bBottom && aBottom > bTop;
+  }
+
+  /**
+   * Universal Power-Up Activation (Spacebar with 2 charges or touching golden Power Token)
    */
   tryActivatePowerUp(forcedByToken = false) {
     if (!forcedByToken && this.powerCharges < this.maxPowerCharges) {
       this.addFloatingText(
         this.player.x,
         this.player.y - 30,
-        `Need ${this.maxPowerCharges - this.powerCharges} more collectible(s)!`,
+        `Need ${this.maxPowerCharges - this.powerCharges} more!`,
         "#cbd5e1"
       );
       return;
@@ -281,27 +354,22 @@ class AnniversaryGame {
     if (levelCfg.id === 1) {
       this.addFloatingText(this.player.x, this.player.y - 32, "🤝 HAND-IN-HAND SHIELD!", "#f472b6");
     } else if (levelCfg.id === 2) {
-      this.addFloatingText(this.player.x, this.player.y - 36, "🧙‍♂️ WARLOCK OBSTACLE BANISH SPELL!", "#c084fc");
+      this.addFloatingText(this.player.x, this.player.y - 36, "🧙‍♂️ WARLOCK SPELL!", "#c084fc");
       this.warlockShockwave = 1.0;
       this.castWarlockObstacleBanish();
     } else if (levelCfg.id === 3) {
-      this.addFloatingText(this.player.x, this.player.y - 32, "☕ HOT COCOA THERMAL BOOST!", "#fb923c");
+      this.addFloatingText(this.player.x, this.player.y - 32, "☕ HOT COCOA BOOST!", "#fb923c");
     } else {
-      this.addFloatingText(this.player.x, this.player.y - 32, "🧋 TATTE LATTE ESPRESSO RUSH!", "#fde047");
+      this.addFloatingText(this.player.x, this.player.y - 32, "🧋 TATTE LATTE RUSH!", "#fde047");
     }
 
-    // Spawn celebratory hearts & sparkles
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 16; i++) {
       this.spawnParticle(this.player.x, this.player.y, "💖");
     }
 
     this.updateHUD();
   }
 
-  /**
-   * Level 2 Special Power-Up: Summons the Warlock in a black cape who uses
-   * a magic spell to remove obstacles!
-   */
   castWarlockObstacleBanish() {
     this.obstacles.forEach(obs => {
       for (let i = 0; i < 6; i++) {
@@ -309,7 +377,6 @@ class AnniversaryGame {
       }
       this.addFloatingText(obs.x, obs.y, "⚡ Poof!", "#c084fc");
     });
-    // Remove all current obstacles with magic spell!
     this.obstacles = [];
   }
 
@@ -324,12 +391,23 @@ class AnniversaryGame {
 
     if (this.state !== "PLAYING") return;
 
+    this.stageElapsed += dt;
+
+    // Progressive Difficulty Scaling: Over time, increase speed & spawn rate!
+    const progressRatio = Math.min(1, this.stageElapsed / this.stageDurationSec);
+    const difficultyMultiplier = 1.0 + progressRatio * 0.45; // Up to 1.45x faster over the stage
+    const boostSpeedBonus = this.isInvincible ? 1.25 : 1.0;
+    const currentScrollSpeed = this.baseScrollSpeed * difficultyMultiplier * boostSpeedBonus;
+
+    // Scroll seamlessly looping background from right to left
+    this.scrollOffset = (this.scrollOffset + currentScrollSpeed * dt) % this.width;
+    this.stageDistance += currentScrollSpeed * dt;
+
     // Update Power-Up Countdown Timer
     if (this.powerUpTimer > 0) {
       this.powerUpTimer = Math.max(0, this.powerUpTimer - dt);
       this.isInvincible = this.powerUpTimer > 0;
 
-      // Continuous heart particle emitter while Power-Up is active
       if (Math.random() < 0.35) {
         const icon = levelCfg.id === 2 ? "✨" : "💗";
         this.spawnParticle(
@@ -341,7 +419,6 @@ class AnniversaryGame {
 
       if (this.powerUpTimer === 0) {
         this.isInvincible = false;
-        this.addFloatingText(this.player.x, this.player.y - 26, "Power-Up Ended", "#e2e8f0");
       }
     }
 
@@ -349,290 +426,207 @@ class AnniversaryGame {
       this.warlockShockwave = Math.max(0, this.warlockShockwave - dt * 1.4);
     }
 
-    // Update status timers on Jana
-    if (this.player.slipTimer > 0) {
-      this.player.slipTimer = Math.max(0, this.player.slipTimer - dt);
-    }
-    if (this.player.confuseTimer > 0) {
-      this.player.confuseTimer = Math.max(0, this.player.confuseTimer - dt);
-    }
-    if (this.player.spinTimer > 0) {
-      this.player.spinTimer = Math.max(0, this.player.spinTimer - dt);
-      this.player.spinAngle += dt * 18;
-      if (this.player.spinTimer === 0) this.player.spinAngle = 0;
-    }
-    if (this.player.copSlideLaunchTimer > 0) {
-      this.player.copSlideLaunchTimer = Math.max(0, this.player.copSlideLaunchTimer - dt);
-    }
+    // Seamless 4-Way Player Movement (Up, Down, Left, Right via Arrow Keys or WASD)
+    const moveSpeed = 310 * (this.isInvincible ? 1.18 : 1.0);
+    let targetVx = 0;
+    let targetVy = 0;
 
-    // Calculate Input Acceleration (Dual WASD + Arrow Keys)
-    const phys = levelCfg.physics;
-    const speedMult = this.isInvincible && (levelCfg.id === 3 || levelCfg.id === 4) ? 1.32 : 1.0;
-    const controlSign = this.player.confuseTimer > 0 ? -1 : 1; // Inverted when confused by Jester pin!
+    if (this.keys.up) targetVy -= moveSpeed;
+    if (this.keys.down) targetVy += moveSpeed;
+    if (this.keys.left) targetVx -= moveSpeed;
+    if (this.keys.right) targetVx += moveSpeed;
 
-    let ax = 0;
-    let ay = 0;
-
-    // While slipping/running in place, movement acceleration is reduced
-    const slipPenalty = this.player.slipTimer > 0 ? 0.25 : 1.0;
-
-    if (this.keys.up) ay -= phys.accel * controlSign * slipPenalty;
-    if (this.keys.down) ay += phys.accel * controlSign * slipPenalty;
-    if (this.keys.left) ax -= phys.accel * controlSign * slipPenalty;
-    if (this.keys.right) ax += phys.accel * controlSign * slipPenalty;
-
-    // Continuous downhill / Cop Slide momentum (Levels 3 & 4)
-    if (phys.continuousForward > 0) {
-      ax += phys.continuousForward;
+    // Normalize diagonal movement so diagonal speed matches cardinal speed
+    if (targetVx !== 0 && targetVy !== 0) {
+      const invSqrt2 = 0.70710678;
+      targetVx *= invSqrt2;
+      targetVy *= invSqrt2;
     }
 
-    this.player.vx += ax;
-    this.player.vy += ay;
+    // Smooth inertia blend (extra responsive while maintaining natural ice/surface feel)
+    const responsiveness = levelCfg.id === 1 ? 10.0 : 14.0;
+    this.player.vx += (targetVx - this.player.vx) * Math.min(1, responsiveness * dt);
+    this.player.vy += (targetVy - this.player.vy) * Math.min(1, responsiveness * dt);
 
-    // Apply surface friction (low on Level 1 ice rink for authentic inertia!)
-    const damping = 1 - phys.frictionAir;
-    this.player.vx *= damping;
-    this.player.vy *= damping;
+    this.player.x += this.player.vx * dt;
+    this.player.y += this.player.vy * dt;
+    this.player.facing = 1; // Always facing forward (right) in side-scrolling view
 
-    // Level 4 Cop Slide minimum forward glide momentum so she keeps sliding!
-    if (levelCfg.id === 4 && this.player.slipTimer <= 0 && this.player.vx < 1.55) {
-      this.player.vx = 1.55;
-    }
-
-    // Cap max speed
-    const maxSpd = phys.maxSpeed * speedMult;
-    const curSpd = Math.hypot(this.player.vx, this.player.vy);
-    if (curSpd > maxSpd) {
-      this.player.vx = (this.player.vx / curSpd) * maxSpd;
-      this.player.vy = (this.player.vy / curSpd) * maxSpd;
-    }
-
-    if (Math.abs(this.player.vx) > 0.15) {
-      this.player.facing = this.player.vx >= 0 ? 1 : -1;
-    }
-
-    this.player.x += this.player.vx;
-    this.player.y += this.player.vy;
-
-    // World bounds collision
-    const minX = 48;
-    const maxX = this.width - 48;
-    const minY = 132;
-    const maxY = this.height - 46;
+    // Constrain player movement strictly within the visible canvas area
+    const halfW = this.player.hitboxW * 0.5 + 8;
+    const halfH = this.player.hitboxH * 0.5 + 8;
+    const minX = halfW + 10;
+    const maxX = this.width - halfW - 10;
+    const minY = 128 + halfH;
+    const maxY = this.height - 34 - halfH;
 
     if (this.player.x < minX) {
       this.player.x = minX;
-      this.player.vx *= -0.5;
+      this.player.vx = 0;
     }
     if (this.player.x > maxX) {
       this.player.x = maxX;
-      this.player.vx *= -0.5;
+      this.player.vx = 0;
     }
     if (this.player.y < minY) {
       this.player.y = minY;
-      this.player.vy *= -0.5;
+      this.player.vy = 0;
     }
     if (this.player.y > maxY) {
       this.player.y = maxY;
-      this.player.vy *= -0.5;
+      this.player.vy = 0;
     }
 
-    // Step Matter.js physics engine in sync
-    if (this.matterEngine && this.matterPlayerBody && window.Matter) {
-      window.Matter.Body.setPosition(this.matterPlayerBody, { x: this.player.x, y: this.player.y });
-      window.Matter.Engine.update(this.matterEngine, dt * 1000);
+    // Spawn Obstacles & Collectibles along the right edge until goal phase begins
+    if (this.stageElapsed < this.stageDurationSec) {
+      this.obstacleSpawnTimer -= dt;
+      if (this.obstacleSpawnTimer <= 0) {
+        // Decrease spawn interval over time to increase difficulty
+        const currentInterval = Math.max(
+          this.minSpawnInterval,
+          this.baseSpawnInterval - progressRatio * 0.52
+        );
+        this.obstacleSpawnTimer = currentInterval * (0.82 + Math.random() * 0.36);
+
+        const newObs = window.LevelBuilder.spawnObstacle(
+          levelCfg.id,
+          this.width,
+          this.height,
+          difficultyMultiplier,
+          this.lastObstacleY
+        );
+        this.lastObstacleY = newObs.y;
+        this.obstacles.push(newObs);
+      }
+
+      // Spawn Collectibles along right edge
+      this.collectibleSpawnTimer -= dt;
+      if (this.collectibleSpawnTimer <= 0) {
+        this.collectibleSpawnTimer = 2.1 + Math.random() * 1.2;
+        this.collectibles.push(
+          window.LevelBuilder.spawnCollectible(levelCfg.id, this.width, this.height, currentScrollSpeed, false)
+        );
+      }
+
+      // Spawn Direct Power-Up Token periodically
+      this.powerTokenSpawnTimer -= dt;
+      if (this.powerTokenSpawnTimer <= 0) {
+        this.powerTokenSpawnTimer = 9.5 + Math.random() * 3.0;
+        this.collectibles.push(
+          window.LevelBuilder.spawnCollectible(levelCfg.id, this.width, this.height, currentScrollSpeed, true)
+        );
+      }
+    } else {
+      // Stage duration reached: Scroll the Goal Landmark in from the right edge!
+      this.goalZone.active = true;
+      const targetGoalX = this.width - 110;
+      if (this.goalZone.x > targetGoalX) {
+        this.goalZone.x -= currentScrollSpeed * dt * 0.85;
+      }
     }
 
-    // Update Obstacles & Check Collisions
-    this.updateObstacles(dt, levelCfg.id, { minX, maxX, minY, maxY });
+    // Update Obstacles, Destroy Off-Screen Obstacles & Check Tight Bounding-Box Collisions
+    this.updateObstacles(dt, levelCfg.id, { minY: 132, maxY: this.height - 36 });
 
-    // Check Collectible & Power-Up Token Pickups
-    this.updateCollectibles(levelCfg.id);
+    // Update Collectibles & Destroy Off-Screen Collectibles
+    this.updateCollectibles(dt);
 
-    // Update Floating Particles & Text
+    // Update Particles & Floating Texts
     this.updateParticles(dt);
 
-    // Check Level Goal Completion!
-    const distToGoal = Math.hypot(this.player.x - this.goalZone.x, this.player.y - this.goalZone.y);
-    if (distToGoal < this.goalZone.radius + this.player.radius - 6) {
-      this.handleGoalReached(levelCfg.id);
+    // Check Goal Completion when Goal Landmark is on screen
+    if (this.goalZone.active) {
+      const distToGoal = Math.hypot(this.player.x - this.goalZone.x, this.player.y - this.goalZone.y);
+      if (distToGoal < this.goalZone.radius + this.player.radius) {
+        this.handleGoalReached(levelCfg.id);
+      }
     }
 
     this.updateHUD();
   }
 
-  updateObstacles(dt, levelId, bounds) {
+  updateObstacles(dt, levelId, verticalBounds) {
     for (let i = this.obstacles.length - 1; i >= 0; i--) {
       const obs = this.obstacles[i];
 
-      // Movement patterns by level
-      if (obs.type === "wobbly_kid") {
-        // Unpredictable zigzag across the ice rink
-        obs.zigzagTimer += dt;
-        if (obs.zigzagTimer > 1.15) {
-          obs.zigzagTimer = 0;
-          obs.vx = -obs.vx + (Math.random() - 0.5) * 0.8;
-        }
-        obs.x += obs.vx;
-        obs.y += obs.vy;
-      } else if (obs.type === "ren_faire") {
-        obs.x += obs.vx;
-        obs.y += obs.vy;
+      // Move steadily to the left (plus slight vertical weaving for active sprites)
+      obs.x += obs.vx * dt;
+      obs.y += (obs.vy || 0) * dt;
 
-        // Mischievous Jesters periodically toss juggling pins toward Jana!
-        if (obs.subType === "jester") {
-          obs.pinCooldown -= dt;
-          if (obs.pinCooldown <= 0) {
-            obs.pinCooldown = 3.2;
-            const angle = Math.atan2(this.player.y - obs.y, this.player.x - obs.x);
-            this.obstacles.push({
-              id: `pin_${ Math.random() }`,
-              type: "ren_faire",
-              subType: "juggling_pin",
-              x: obs.x,
-              y: obs.y,
-              vx: Math.cos(angle) * 3.1,
-              vy: Math.sin(angle) * 3.1,
-              radius: 10,
-              seed: Math.random() * 10,
-              ttl: 3.5
-            });
-          }
-        }
-        if (obs.subType === "juggling_pin") {
-          obs.ttl -= dt;
-          if (obs.ttl <= 0) {
-            this.obstacles.splice(i, 1);
-            continue;
-          }
-        }
-      } else if (obs.type === "ski_obstacle") {
-        if (obs.subType === "skier") {
-          // Beginner skiers making wide S-turns across the slope
-          obs.x += Math.sin(this.time * 2.5 + obs.seed) * 1.6;
-          obs.y += obs.vy;
-        }
-      } else if (obs.type === "boston_obstacle") {
-        obs.x += obs.vx;
-        obs.y += obs.vy;
-
-        // Exploding Sprite drinks fizz and pop periodically!
-        if (obs.subType === "sprite_can") {
-          obs.fizzPhase += dt * 0.45;
-          if (obs.fizzPhase >= 1.0) {
-            obs.popping = true;
-            obs.popRadius = 42;
-            if (obs.fizzPhase >= 1.35) {
-              obs.fizzPhase = 0;
-              obs.popping = false;
-              obs.popRadius = 20;
-            }
-          }
-        }
+      // Bounce vertical weaving within the playable lane
+      if (obs.y < verticalBounds.minY || obs.y > verticalBounds.maxY) {
+        obs.vy = -(obs.vy || 0);
+        obs.y = Math.max(verticalBounds.minY, Math.min(verticalBounds.maxY, obs.y));
       }
 
-      // Bounce moving obstacles within arena bounds
-      if (obs.subType !== "juggling_pin" && obs.subType !== "ice_patch") {
-        if (obs.x < bounds.minX + 70 || obs.x > bounds.maxX - 95) obs.vx *= -1;
-        if (obs.y < bounds.minY + 18 || obs.y > bounds.maxY - 18) obs.vy *= -1;
-        obs.x = Math.max(bounds.minX + 65, Math.min(bounds.maxX - 90, obs.x));
-        obs.y = Math.max(bounds.minY + 16, Math.min(bounds.maxY - 16, obs.y));
+      // Stage 4 Sprite cans fizz while moving left
+      if (obs.subType === "sprite_can") {
+        obs.fizzPhase = (obs.fizzPhase || 0) + dt * 0.6;
+        obs.popping = obs.fizzPhase >= 0.85;
       }
 
-      // Check Collision with Jana
-      const effectiveRadius = obs.popping ? obs.popRadius : obs.radius;
-      const dx = this.player.x - obs.x;
-      const dy = this.player.y - obs.y;
-      const dist = Math.hypot(dx, dy);
+      // MEMORY CLEANUP: Destroy obstacle once it goes off the left side of the screen
+      if (obs.x + (obs.hitboxW || 30) < -30) {
+        this.obstacles.splice(i, 1);
+        continue;
+      }
 
-      if (dist < this.player.radius + effectiveRadius) {
-        const nx = (dx / (dist || 1));
-        const ny = (dy / (dist || 1));
+      // Tight Bounding-Box (AABB) Collision Detection with Player
+      const hit = this.checkTightAABB(
+        this.player.x,
+        this.player.y,
+        this.player.hitboxW,
+        this.player.hitboxH,
+        obs.x,
+        obs.y,
+        obs.hitboxW || 24,
+        obs.hitboxH || 28
+      );
 
+      if (hit) {
         if (this.isInvincible) {
-          // Invincible Power-Up Active: Gently push kids/obstacles aside without losing speed!
-          if (obs.subType !== "ice_patch") {
-            obs.x -= nx * 24;
-            obs.y -= ny * 24;
-            obs.vx = -nx * 2.6;
-            obs.vy = -ny * 2.6;
+          // Power-Up Shield Active: Safely knock obstacle away and award bonus points!
+          this.score += 50;
+          for (let p = 0; p < 6; p++) {
             this.spawnParticle(obs.x, obs.y, "💖");
           }
+          this.obstacles.splice(i, 1);
+          continue;
         } else {
-          // Standard Obstacle Hit Behavior by Level
-          if (levelId === 1) {
-            // Wobbly Toddlers & Kids: Brief slide back, loss of momentum & running-in-place animation!
-            if (this.player.slipTimer <= 0) {
-              window.soundManager.playBump();
-              this.player.slipTimer = 0.85;
-              this.player.vx = nx * 3.8 - 2.2;
-              this.player.vy = ny * 3.2;
-              this.player.x += nx * 12;
-              this.player.y += ny * 12;
-              this.addFloatingText(this.player.x, this.player.y - 28, "⛸️ Whoa! Sliding in place!", "#38bdf8");
-            }
-          } else if (levelId === 2) {
-            if (obs.subType === "juggling_pin") {
-              window.soundManager.playConfuse();
-              this.player.confuseTimer = 2.4;
-              this.obstacles.splice(i, 1);
-              this.addFloatingText(this.player.x, this.player.y - 28, "🤹 Confused Controls!", "#facc15");
-              continue;
-            } else {
-              window.soundManager.playBump();
-              this.player.slipTimer = 0.65;
-              this.player.vx = nx * 4.2 - 2.0;
-              this.player.vy = ny * 3.5;
-              if (obs.subType === "jester") {
-                this.player.confuseTimer = 1.8;
-                this.addFloatingText(this.player.x, this.player.y - 28, "🃏 Jester Trick! Controls Flipped!", "#c084fc");
-              } else {
-                this.addFloatingText(this.player.x, this.player.y - 28, "🛡️ Knight Charge Bump!", "#f87171");
-              }
-            }
-          } else if (levelId === 3) {
-            if (obs.subType === "ice_patch") {
-              if (this.player.spinTimer <= 0) {
-                window.soundManager.playBump();
-                this.player.spinTimer = 0.75;
-                this.player.vx *= 0.45;
-                this.addFloatingText(this.player.x, this.player.y - 28, "🧊 Icy Spin-Out!", "#7dd3fc");
-              }
-            } else {
-              window.soundManager.playBump();
-              this.player.slipTimer = 0.65;
-              this.player.vx = nx * 3.8 - 1.8;
-              this.player.vy = ny * 3.5;
-              this.addFloatingText(this.player.x, this.player.y - 28, "⛷️ Oops! Beginner Skier!", "#fb923c");
-            }
-          } else if (levelId === 4) {
-            if (obs.subType === "sprite_can") {
-              window.soundManager.playFizzPop();
-              obs.popping = true;
-              obs.popRadius = 45;
-              this.player.slipTimer = 0.65;
-              this.player.vx = nx * 4.4 - 2.0;
-              this.player.vy = ny * 4.0;
-              this.addFloatingText(this.player.x, this.player.y - 28, "🥫 FIZZ BOOM! Exploding Sprite!", "#4ade80");
-            } else {
-              window.soundManager.playBump();
-              this.player.slipTimer = 0.65;
-              this.player.vx = nx * 4.0 - 2.0;
-              this.player.vy = ny * 3.8;
-              this.addFloatingText(this.player.x, this.player.y - 28, "🧹 Salem Witch Sweep!", "#c084fc");
-            }
-          }
+          // Player hit an obstacle without shield -> Trigger 'Game Over' screen with 'Restart' button!
+          this.triggerGameOver();
+          return;
         }
       }
     }
   }
 
-  updateCollectibles(levelId) {
-    this.collectibles.forEach(item => {
-      if (item.collected) return;
-      const dist = Math.hypot(this.player.x - item.x, this.player.y - item.y);
-      if (dist < this.player.radius + item.radius + 4) {
-        item.collected = true;
+  updateCollectibles(dt) {
+    for (let i = this.collectibles.length - 1; i >= 0; i--) {
+      const item = this.collectibles[i];
+
+      // Move steadily from right to left with the scrolling world
+      item.x += (item.vx || -200) * dt;
+
+      // Destroy collectible if it scrolls off the left edge of the screen
+      if (item.x + 30 < -20) {
+        this.collectibles.splice(i, 1);
+        continue;
+      }
+
+      // Tight AABB pickup check
+      const pickedUp = this.checkTightAABB(
+        this.player.x,
+        this.player.y,
+        this.player.hitboxW + 6,
+        this.player.hitboxH + 6,
+        item.x,
+        item.y,
+        item.hitboxW || 26,
+        item.hitboxH || 26
+      );
+
+      if (pickedUp) {
         this.score += item.points || 100;
 
         if (item.isCrown) {
@@ -642,15 +636,13 @@ class AnniversaryGame {
           this.fondueCollected[item.fondueKey] = true;
         }
 
-        for (let i = 0; i < 8; i++) {
+        for (let p = 0; p < 8; p++) {
           this.spawnParticle(item.x, item.y, item.icon);
         }
 
         if (item.isPowerToken) {
-          // Direct Power-Up Token touched! Activate immediately!
           this.tryActivatePowerUp(true);
         } else {
-          // Standard Collectible gathered (+1 charge toward Spacebar Power-Up)
           this.powerCharges = Math.min(this.maxPowerCharges, this.powerCharges + 1);
           if (this.powerCharges >= this.maxPowerCharges) {
             window.soundManager.playPowerUpReady();
@@ -660,13 +652,15 @@ class AnniversaryGame {
             this.addFloatingText(item.x, item.y - 14, `+${item.points || 100}`, "#fef08a");
           }
         }
+
+        this.collectibles.splice(i, 1);
       }
-    });
+    }
   }
 
   handleGoalReached(levelId) {
     if (levelId === 1) {
-      // Level 1 Special Ending: Chloe's Mom snaps several photos of us at the Hot Cocoa Bench!
+      // Stage 1 Surprise Ending: Chloe's Mom pops out and snaps photos at the Hot Cocoa Bench!
       this.state = "CUTSCENE";
       this.cutsceneTimer = 2.6;
       this.shutterCount = 0;
@@ -686,7 +680,6 @@ class AnniversaryGame {
     this.cutsceneTimer -= dt;
     this.cameraFlash = Math.max(0, this.cameraFlash - dt * 2.8);
 
-    // Snap 3 photos with camera shutter flash
     if (this.cutsceneTimer < 1.8 && this.shutterCount === 0) {
       this.shutterCount = 1;
       this.cameraFlash = 1.0;
@@ -717,12 +710,10 @@ class AnniversaryGame {
     document.getElementById("transitionStory").textContent = levelCfg.completionStory;
     document.getElementById("nextLevelBtn").textContent = levelCfg.nextButtonText;
 
-    // Level-specific showcase inside the transition modal:
     const photoShowcase = document.getElementById("level1PhotoShowcase");
     const sceneBanner = document.getElementById("levelSceneBanner");
 
     if (levelCfg.id === 1) {
-      // Display real photos (or keepsake polaroid illustrations) snapped by Chloe's Mom!
       photoShowcase.classList.remove("hidden");
       sceneBanner.classList.add("hidden");
       this.populatePolaroidGallery("polaroidGrid");
@@ -745,7 +736,7 @@ class AnniversaryGame {
         sceneBanner.innerHTML = `
           <div class="scene-vignette">
             <div class="vignette-icons">🛝 ⚾ 🧙‍♀️ 🧋 🕯️🥂</div>
-            <p class="vignette-caption">From flying down the Boston Cop Slide to clinking glasses at dinner with Julia—all 4 levels complete!</p>
+            <p class="vignette-caption">From flying down the Boston Cop Slide to clinking glasses at dinner with Julia—all 4 stages complete!</p>
           </div>`;
       }
     }
@@ -767,7 +758,6 @@ class AnniversaryGame {
       const mediaWrap = document.createElement("div");
       mediaWrap.className = "polaroid-media";
 
-      // Create fallback illustrated canvas first, and replace with real <img> if file exists
       const fallbackCanvas = document.createElement("canvas");
       fallbackCanvas.width = 240;
       fallbackCanvas.height = 175;
@@ -810,7 +800,7 @@ class AnniversaryGame {
     const finale = this.config.finale;
     document.getElementById("victoryHeadline").textContent = finale.headline;
     document.getElementById("victorySubheadline").textContent = finale.subheadline;
-    document.getElementById("victoryScore").textContent = `Final Journey Score: ${this.score} pts`;
+    document.getElementById("victoryScore").textContent = `Final Score: ${this.score} pts`;
 
     const letterEl = document.getElementById("victoryLetter");
     letterEl.innerHTML = finale.letterParagraphs.map(p => `<p>${p}</p>`).join("") +
@@ -899,13 +889,17 @@ class AnniversaryGame {
     const scoreEl = document.getElementById("hudScore");
     if (scoreEl) scoreEl.textContent = this.score;
 
-    // Highlight mystery stage progress dots
+    const progressBar = document.getElementById("hudProgressBar");
+    if (progressBar) {
+      const pct = Math.min(100, (this.stageElapsed / this.stageDurationSec) * 100);
+      progressBar.style.width = `${pct}%`;
+    }
+
     document.querySelectorAll(".stage-dot").forEach((dot, idx) => {
       dot.classList.toggle("active", idx === this.currentLevelIndex);
       dot.classList.toggle("completed", idx < this.currentLevelIndex);
     });
 
-    // Update Power-Up Charge Meter & Button (No spoilers!)
     const powerBtn = document.getElementById("powerUpTriggerBtn");
     if (powerBtn) {
       if (this.powerUpTimer > 0) {
@@ -922,7 +916,6 @@ class AnniversaryGame {
       }
     }
 
-    // Level 3 Subtle Ingredient Icons (no text spoilers)
     const fondueBadge = document.getElementById("fondueHudTracker");
     if (fondueBadge) {
       if (levelCfg.id === 3) {
@@ -946,20 +939,23 @@ class AnniversaryGame {
 
     ctx.clearRect(0, 0, this.width, this.height);
 
-    // 1. Draw Themed Environment & Goal Landmark
+    // 1. Draw Seamlessly Looping Horizontal Scrolling Environment & Goal Landmark
     this.sprites.drawEnvironment(ctx, this.width, this.height, levelId, this.time, {
+      scrollOffset: this.scrollOffset,
+      stageDistance: this.stageDistance,
+      goalActive: this.goalZone.active,
+      goalX: this.goalZone.x,
+      goalY: this.goalZone.y,
       cameraFlash: this.cameraFlash,
       isCutscene: this.state === "CUTSCENE"
     });
 
-    // 2. Draw Collectibles & Power-Up Tokens
+    // 2. Draw Collectibles & Power-Up Tokens scrolling right-to-left
     this.collectibles.forEach(item => {
-      if (!item.collected) {
-        this.sprites.drawCollectible(ctx, item, this.time);
-      }
+      this.sprites.drawCollectible(ctx, item, this.time);
     });
 
-    // 3. Draw Level Obstacles
+    // 3. Draw Obstacles scrolling right-to-left
     this.obstacles.forEach(obs => {
       if (obs.type === "wobbly_kid") {
         this.sprites.drawWobblyKid(ctx, obs, this.time);
@@ -972,7 +968,7 @@ class AnniversaryGame {
       }
     });
 
-    // 4. Draw Warlock Magic Spell Shockwave Ring (Level 2)
+    // 4. Draw Warlock Magic Spell Shockwave Ring (Stage 2)
     if (this.warlockShockwave > 0) {
       const r = (1 - this.warlockShockwave) * 420 + 30;
       ctx.save();
@@ -986,7 +982,7 @@ class AnniversaryGame {
       ctx.restore();
     }
 
-    // 5. Draw Partner Sprite when Holding Hands (Level 1 Power-Up / Cutscene) or Warlock (Level 2 Power-Up)
+    // 5. Draw Partner Sprite when Holding Hands (Stage 1) or Warlock (Stage 2)
     if (
       (levelId === 1 && (this.isInvincible || this.state === "CUTSCENE")) ||
       (levelId === 2 && this.isInvincible)
@@ -996,7 +992,6 @@ class AnniversaryGame {
       const partnerY = this.player.y - 2;
       this.sprites.drawPartner(ctx, partnerX, partnerY, this.time, isWarlock);
 
-      // Draw linked hands & floating heart when holding hands in Level 1
       if (levelId === 1) {
         ctx.font = "14px sans-serif";
         ctx.textAlign = "center";
@@ -1004,18 +999,18 @@ class AnniversaryGame {
       }
     }
 
-    // 6. Draw Main Player Character: Jana (small girl with black hair and brown eyes)
+    // 6. Draw Main Player Character: Jana
     this.sprites.drawJana(ctx, this.player.x, this.player.y, {
       levelId,
-      vx: this.player.vx,
-      vy: this.player.vy,
+      vx: this.player.vx * 0.02,
+      vy: this.player.vy * 0.02,
       time: this.time,
       slipTimer: this.player.slipTimer,
       confuseTimer: this.player.confuseTimer,
       spinAngle: this.player.spinAngle,
       powerUpTimer: this.powerUpTimer,
       hasFlowerCrown: this.player.hasFlowerCrown,
-      facing: this.player.facing
+      facing: 1
     });
 
     // 7. Draw Active HUD Countdown Dial right above Jana when Power-Up is active
@@ -1065,7 +1060,7 @@ class AnniversaryGame {
       ctx.restore();
     });
 
-    // 9. Camera Flash Overlay during Chloe's Mom photo shoot in Level 1
+    // 9. Camera Flash Overlay during Chloe's Mom photo shoot in Stage 1
     if (this.cameraFlash > 0) {
       ctx.save();
       ctx.fillStyle = `rgba(255, 255, 255, ${this.cameraFlash * 0.75})`;

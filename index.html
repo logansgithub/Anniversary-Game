@@ -21,6 +21,10 @@
           <span class="stage-dot" data-stage-dot="2"></span>
           <span class="stage-dot" data-stage-dot="3"></span>
         </div>
+        <!-- Subtle Distance Progress Bar -->
+        <div class="progress-track" title="Stage Progress">
+          <div id="hudProgressBar" class="progress-fill"></div>
+        </div>
       </div>
 
       <div class="nav-right">
@@ -33,7 +37,7 @@
       </div>
     </header>
 
-    <!-- Main 2D Canvas Stage & Modals -->
+    <!-- Main 2D Side-Scrolling Canvas Stage & Modals -->
     <main class="stage-wrapper">
       <canvas id="gameCanvas" width="960" height="540"></canvas>
 
@@ -43,17 +47,17 @@
           <span class="modal-badge">For Jana</span>
           <h1 class="modal-title">Ready for an Adventure?</h1>
           <p class="modal-subtitle">
-            Each stage is a secret until you get there. Follow the path across each world to see what awaits at the other side!
+            Each stage is a secret until you get there. Weave through oncoming obstacles across each world to discover what awaits at the finish!
           </p>
 
           <div class="controls-grid">
             <div class="control-box">
-              <h4>🎮 Move</h4>
-              <p>Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to steer and glide across each stage.</p>
+              <h4>🎮 Move &amp; Weave</h4>
+              <p>Use <strong>WASD</strong> or <strong>Arrow Keys</strong> to move seamlessly Up, Down, Left, and Right.</p>
             </div>
             <div class="control-box">
               <h4>⚡ Special Boost</h4>
-              <p>Collect <strong>2 tokens</strong> &amp; press <strong>SPACEBAR</strong> (or touch a glowing golden icon).</p>
+              <p>Collect <strong>2 tokens</strong> &amp; press <strong>SPACEBAR</strong> (or grab a golden icon) for temporary protection.</p>
             </div>
           </div>
 
@@ -63,7 +67,21 @@
         </div>
       </div>
 
-      <!-- 2. STAGE COMPLETE REVEAL OVERLAY (Only reveals the stage you just finished!) -->
+      <!-- 2. GAME OVER OVERLAY WITH RESTART BUTTON -->
+      <div id="gameOverOverlay" class="overlay hidden">
+        <div class="modal-card gameover-card">
+          <span class="modal-badge gameover-badge">Collision!</span>
+          <h2 class="modal-title">Game Over</h2>
+          <p id="gameOverMessage" class="modal-subtitle">
+            Oops! You bumped into an obstacle on the way. Ready to jump right back in?
+          </p>
+          <button id="restartBtn" class="btn-primary" type="button">
+            🔄 Restart
+          </button>
+        </div>
+      </div>
+
+      <!-- 3. STAGE COMPLETE REVEAL OVERLAY (Only reveals the stage you just finished!) -->
       <div id="transitionOverlay" class="overlay hidden">
         <div class="modal-card">
           <span id="transitionBadge" class="modal-badge">Stage I Complete</span>
@@ -84,7 +102,7 @@
         </div>
       </div>
 
-      <!-- 3. GRAND FINALE VICTORY & GIFT REVEAL OVERLAY -->
+      <!-- 4. GRAND FINALE VICTORY & GIFT REVEAL OVERLAY -->
       <div id="victoryOverlay" class="overlay hidden">
         <div id="confettiContainer"></div>
         <div class="modal-card">
@@ -115,9 +133,9 @@
       </div>
     </main>
 
-    <!-- Minimal Controls Footer (No Hints or Spoilers) -->
+    <!-- Minimal Controls Footer (No Spoilers) -->
     <footer class="footer-hint">
-      <span>Move: <strong>WASD</strong> or <strong>Arrow Keys</strong></span>
+      <span>Move: <strong>WASD</strong> or <strong>Arrow Keys</strong> (Up / Down / Left / Right)</span>
       <span>Boost: <strong>SPACEBAR</strong> (when charged)</span>
     </footer>
   </div>
