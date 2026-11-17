@@ -62,15 +62,15 @@ class AnniversaryGame {
       chocolate: false
     };
 
-    // Player Entity (Positioned on the left side of the screen, with tight AABB hitbox)
+    // Player Entity (Positioned on the left side of the screen, with tight AABB hitbox for ~2x sprite)
     this.player = {
       x: 120,
       y: 270,
       vx: 0,
       vy: 0,
-      radius: 16,
-      hitboxW: 22, // Tight bounding-box width
-      hitboxH: 30, // Tight bounding-box height
+      radius: 28,
+      hitboxW: 36, // Tight bounding-box width for 2x sprite
+      hitboxH: 52, // Tight bounding-box height for 2x sprite
       facing: 1,
       slipTimer: 0,
       confuseTimer: 0,
@@ -993,14 +993,14 @@ class AnniversaryGame {
       (levelId === 2 && this.isInvincible)
     ) {
       const isWarlock = levelId === 2;
-      const partnerX = this.player.x - 24;
+      const partnerX = this.player.x - 46;
       const partnerY = this.player.y - 2;
       this.sprites.drawPartner(ctx, partnerX, partnerY, this.time, isWarlock);
 
       if (levelId === 1) {
-        ctx.font = "14px sans-serif";
+        ctx.font = "18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("💗", this.player.x - 12, this.player.y - 24);
+        ctx.fillText("💗", this.player.x - 23, this.player.y - 42);
       }
     }
 
@@ -1022,7 +1022,7 @@ class AnniversaryGame {
     if (this.powerUpTimer > 0) {
       const ratio = this.powerUpTimer / this.powerUpDuration;
       ctx.save();
-      ctx.translate(this.player.x, this.player.y - 38);
+      ctx.translate(this.player.x, this.player.y - 62);
       ctx.fillStyle = "rgba(15, 23, 42, 0.75)";
       ctx.beginPath();
       ctx.arc(0, 0, 12, 0, Math.PI * 2);

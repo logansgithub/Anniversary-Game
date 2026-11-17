@@ -29,9 +29,8 @@ class SpriteRenderer {
   }
 
   /**
-   * Draws Jana (small girl with black hair and brown eyes)
-   * Includes level-specific outfits, flower crown, and the signature
-   * "running/sliding in place" animation when bumping into obstacles!
+   * Draws Jana (small girl with black hair and brown eyes) at ~2x size with
+   * rich layered hair, detailed eyes, level-specific outfits, and animations.
    */
   drawJana(ctx, x, y, state) {
     const {
@@ -44,246 +43,419 @@ class SpriteRenderer {
       spinAngle = 0,
       powerUpTimer = 0,
       hasFlowerCrown = false,
-      facing = 1
+      facing = 1,
+      customScale = null
     } = state;
 
     ctx.save();
     ctx.translate(x, y);
 
-    // Power-up active glowing aura
+    const scale = customScale !== null
+      ? customScale
+      : ((this.config.player && this.config.player.scale) || 1.85);
+
+    // Power-up active glowing aura (scaled to fit 2x sprite)
     if (powerUpTimer > 0) {
       const pulse = 1 + Math.sin(time * 10) * 0.08;
-      const grad = ctx.createRadialGradient(0, 0, 10, 0, 0, 48 * pulse);
+      const auraR = 44 * scale * pulse;
+      const grad = ctx.createRadialGradient(0, 0, 12, 0, 0, auraR);
       if (levelId === 2) {
-        grad.addColorStop(0, "rgba(168, 85, 247, 0.45)");
-        grad.addColorStop(0.6, "rgba(236, 72, 153, 0.25)");
+        grad.addColorStop(0, "rgba(168, 85, 247, 0.5)");
+        grad.addColorStop(0.6, "rgba(236, 72, 153, 0.28)");
         grad.addColorStop(1, "rgba(168, 85, 247, 0)");
       } else {
-        grad.addColorStop(0, "rgba(244, 114, 182, 0.5)");
-        grad.addColorStop(0.6, "rgba(251, 191, 36, 0.28)");
+        grad.addColorStop(0, "rgba(244, 114, 182, 0.52)");
+        grad.addColorStop(0.6, "rgba(251, 191, 36, 0.3)");
         grad.addColorStop(1, "rgba(244, 114, 182, 0)");
       }
       ctx.fillStyle = grad;
       ctx.beginPath();
-      ctx.arc(0, 0, 50 * pulse, 0, Math.PI * 2);
+      ctx.arc(0, 0, auraR, 0, Math.PI * 2);
       ctx.fill();
 
-      ctx.strokeStyle = levelId === 2 ? "rgba(192, 132, 252, 0.85)" : "rgba(251, 113, 133, 0.85)";
-      ctx.lineWidth = 2.5;
-      ctx.setLineDash([6, 4]);
+      ctx.strokeStyle = levelId === 2 ? "rgba(192, 132, 252, 0.9)" : "rgba(251, 113, 133, 0.9)";
+      ctx.lineWidth = 3;
+      ctx.setLineDash([8, 5]);
       ctx.beginPath();
-      ctx.arc(0, 0, 34 * pulse, time * 3, time * 3 + Math.PI * 2);
+      ctx.arc(0, 0, 31 * scale * pulse, time * 3, time * 3 + Math.PI * 2);
       ctx.stroke();
       ctx.setLineDash([]);
     }
 
-    // Spin-out rotation (Level 3 ice patch or slip)
+    // Spin-out or wobbly slip rotation
     if (spinAngle !== 0) {
       ctx.rotate(spinAngle);
     } else if (slipTimer > 0) {
-      // Wobbly tilt during running-in-place animation
       ctx.rotate(Math.sin(time * 38) * 0.22);
     } else {
-      // Gentle lean in movement direction
-      ctx.rotate(vx * 0.035);
+      ctx.rotate(vx * 0.025);
     }
 
-    const scale = (this.config.player && this.config.player.scale) || 0.92;
     ctx.scale(scale, scale);
 
-    // Shadow under Jana
-    ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
+    // Soft ground shadow
+    ctx.fillStyle = "rgba(15, 23, 42, 0.28)";
     ctx.beginPath();
-    ctx.ellipse(0, 22, 16, 6, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 23, 16, 5.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Level 3 Skis underneath boots
+    // Stage 3 Twin Carving Skis & Poles underneath boots
     if (levelId === 3) {
       ctx.save();
       ctx.fillStyle = "#ec4899";
-      ctx.strokeStyle = "#fbcfe8";
-      ctx.lineWidth = 1.5;
-      // Left & right skis
-      this.roundRect(ctx, -12, 14, 28, 4.5, 2);
+      ctx.strokeStyle = "#fdf2f8";
+      ctx.lineWidth = 1.4;
+      // Left & right skis with upturned tips
+      this.roundRect(ctx, -14, 15, 32, 4.5, 2.2);
       ctx.fill();
       ctx.stroke();
-      this.roundRect(ctx, -10, 20, 28, 4.5, 2);
+      this.roundRect(ctx, -12, 20.5, 32, 4.5, 2.2);
       ctx.fill();
       ctx.stroke();
+      // Ski bindings
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(-3, 15.5, 6, 3.5);
+      ctx.fillRect(-1, 21, 6, 3.5);
       ctx.restore();
     }
 
-    // LEGS & FEET: Check for "running/sliding in place" animation!
+    // LEGS, TIGHTS & BOOTS/SKATES
     const isRunningInPlace = slipTimer > 0;
     const speed = Math.hypot(vx, vy);
     const legFreq = isRunningInPlace ? 45 : 14;
-    const legAmp = isRunningInPlace ? 8.5 : Math.min(5, speed * 1.1);
+    const legAmp = isRunningInPlace ? 8.5 : Math.min(4.5, speed * 0.9 + 1.2);
     const legOffsetLeft = Math.sin(time * legFreq) * legAmp;
     const legOffsetRight = Math.sin(time * legFreq + Math.PI) * legAmp;
 
-    // Motion blur ovals when running/sliding frantically in place
     if (isRunningInPlace) {
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.8)";
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.ellipse(0, 19, 16, 6, 0, 0, Math.PI * 2);
       ctx.stroke();
 
-      // Flying comic sweat drops
+      // Comic sweat drops
       ctx.fillStyle = "#38bdf8";
       const dropShift = (time * 20) % 1;
       ctx.beginPath();
-      ctx.arc(-18 - dropShift * 6, -16 - dropShift * 4, 3, 0, Math.PI * 2);
-      ctx.arc(19 + dropShift * 6, -14 - dropShift * 4, 2.5, 0, Math.PI * 2);
+      ctx.arc(-19 - dropShift * 6, -16 - dropShift * 4, 2.8, 0, Math.PI * 2);
+      ctx.arc(20 + dropShift * 6, -14 - dropShift * 4, 2.4, 0, Math.PI * 2);
       ctx.fill();
     }
 
-    // Boots / Skates
-    ctx.fillStyle = levelId === 1 ? "#f8fafc" : "#334155";
+    // Leggings / Tights
+    ctx.fillStyle = "#1e293b";
+    this.roundRect(ctx, -6.5 + legOffsetLeft * 0.35, 11, 4.2, 7, 2);
+    this.roundRect(ctx, 2.3 + legOffsetRight * 0.35, 11, 4.2, 7, 2);
+    ctx.fill();
+
+    // Detailed Boots / Ice Skates
+    const lx = -5 + legOffsetLeft * 0.45;
+    const ly = 17.5 + Math.abs(legOffsetLeft) * 0.18;
+    const rx = 5 + legOffsetRight * 0.45;
+    const ry = 17.5 + Math.abs(legOffsetRight) * 0.18;
+
+    ctx.fillStyle = levelId === 1 ? "#ffffff" : "#334155";
+    ctx.strokeStyle = levelId === 1 ? "#cbd5e1" : "#0f172a";
+    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.ellipse(-5 + legOffsetLeft * 0.5, 17 + Math.abs(legOffsetLeft) * 0.2, 5, 3.5, 0, 0, Math.PI * 2);
-    ctx.ellipse(5 + legOffsetRight * 0.5, 17 + Math.abs(legOffsetRight) * 0.2, 5, 3.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(lx, ly, 5.2, 3.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(rx, ry, 5.2, 3.6, 0, 0, Math.PI * 2);
     ctx.fill();
-
-    // Ice skate blades on Level 1
-    if (levelId === 1) {
-      ctx.strokeStyle = "#cbd5e1";
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.moveTo(-9 + legOffsetLeft * 0.5, 20.5);
-      ctx.lineTo(0 + legOffsetLeft * 0.5, 20.5);
-      ctx.moveTo(1 + legOffsetRight * 0.5, 20.5);
-      ctx.lineTo(10 + legOffsetRight * 0.5, 20.5);
-      ctx.stroke();
-    }
-
-    // Back Layer of Long Black Hair
-    ctx.fillStyle = this.config.player.hairColor || "#18141c";
-    ctx.beginPath();
-    ctx.ellipse(0, -1, 15.5, 16, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Outfit / Torso by Level
-    if (levelId === 1) {
-      // Cozy rose-berry winter coat
-      ctx.fillStyle = "#e11d48";
-      this.roundRect(ctx, -11, 1, 22, 15, 6);
-      ctx.fill();
-      // White fluffy coat trim
-      ctx.fillStyle = "#fff1f2";
-      this.roundRect(ctx, -11.5, 13, 23, 3.5, 2);
-      ctx.fill();
-    } else if (levelId === 2) {
-      // Renaissance Faire emerald & gold corset dress
-      ctx.fillStyle = "#059669";
-      ctx.beginPath();
-      ctx.moveTo(-9, 1);
-      ctx.lineTo(9, 1);
-      ctx.lineTo(13, 16);
-      ctx.lineTo(-13, 16);
-      ctx.closePath();
-      ctx.fill();
-      // Gold lacing
-      ctx.strokeStyle = "#fbbf24";
-      ctx.lineWidth = 1.5;
-      ctx.beginPath();
-      ctx.moveTo(-3, 3);
-      ctx.lineTo(3, 7);
-      ctx.lineTo(-3, 11);
-      ctx.lineTo(3, 14);
-      ctx.stroke();
-    } else if (levelId === 3) {
-      // Snowy Alpine Puffer Jacket (Berry & Lavender)
-      ctx.fillStyle = "#9333ea";
-      this.roundRect(ctx, -11.5, 1, 23, 15, 6);
-      ctx.fill();
-      ctx.fillStyle = "#f472b6";
-      ctx.fillRect(-11, 6, 22, 4);
-    } else {
-      // Level 4 Boston Chic Coat & Scarf
-      ctx.fillStyle = "#be185d";
-      this.roundRect(ctx, -11, 1, 22, 15, 6);
-      ctx.fill();
-      ctx.fillStyle = "#fde047";
-      ctx.fillRect(-3, 2, 6, 13);
-    }
-
-    // Arms (windmill wildly when slipping in place!)
-    const armAngle = isRunningInPlace ? Math.sin(time * 40) * 0.9 : Math.sin(time * 10) * 0.15;
-    ctx.save();
-    ctx.fillStyle = levelId === 2 ? "#f8fafc" : "#e11d48";
-    ctx.translate(-11, 5);
-    ctx.rotate(armAngle);
-    this.roundRect(ctx, -4, -2, 5, 10, 2.5);
-    ctx.fill();
-    ctx.restore();
-
-    ctx.save();
-    ctx.fillStyle = levelId === 2 ? "#f8fafc" : "#e11d48";
-    ctx.translate(11, 5);
-    ctx.rotate(-armAngle);
-    this.roundRect(ctx, -1, -2, 5, 10, 2.5);
-    ctx.fill();
-    ctx.restore();
-
-    // Cozy Scarf on winter levels (Level 1 & 3)
-    if (levelId === 1 || levelId === 3) {
-      ctx.fillStyle = "#fef08a";
-      this.roundRect(ctx, -10, -1, 20, 4.5, 2);
-      ctx.fill();
-      ctx.fillRect(4, 1, 4.5, 9);
-    }
-
-    // Head / Face
-    ctx.fillStyle = this.config.player.skinTone || "#fad7c0";
-    ctx.beginPath();
-    ctx.arc(0, -8, 11.5, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Black Hair Bangs & Side Framing Locks
-    ctx.fillStyle = this.config.player.hairColor || "#18141c";
-    ctx.beginPath();
-    ctx.arc(0, -10.5, 12.2, Math.PI * 0.92, Math.PI * 2.08);
-    ctx.fill();
-
-    // Side locks framing face
-    ctx.beginPath();
-    ctx.ellipse(-11, -5, 3.5, 8.5, 0.12, 0, Math.PI * 2);
-    ctx.ellipse(11, -5, 3.5, 8.5, -0.12, 0, Math.PI * 2);
-    ctx.fill();
-
-    // Silky Hair Highlight
-    ctx.strokeStyle = this.config.player.hairHighlight || "#3b314a";
-    ctx.lineWidth = 1.6;
-    ctx.beginPath();
-    ctx.arc(0, -11, 9.5, Math.PI * 1.15, Math.PI * 1.85);
     ctx.stroke();
 
-    // Rosy Blush Cheeks
-    ctx.fillStyle = "rgba(244, 114, 182, 0.55)";
+    // Skate blades & laces on Stage 1
+    if (levelId === 1) {
+      ctx.strokeStyle = "#94a3b8";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(lx - 4.5, ly + 3.6);
+      ctx.lineTo(lx + 5.5, ly + 3.6);
+      ctx.moveTo(rx - 4.5, ry + 3.6);
+      ctx.lineTo(rx + 5.5, ry + 3.6);
+      ctx.stroke();
+    }
+
+    // Back Layer of Long Flowing Black Hair (with sculpted wave tips)
+    ctx.fillStyle = this.config.player.hairColor || "#18141c";
     ctx.beginPath();
-    ctx.ellipse(-6.2, -5.2, 2.6, 1.5, 0, 0, Math.PI * 2);
-    ctx.ellipse(6.2, -5.2, 2.6, 1.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 0, 16, 17.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Flowing lower hair locks behind shoulders
+    ctx.beginPath();
+    ctx.ellipse(-11, 8, 5, 9, 0.2, 0, Math.PI * 2);
+    ctx.ellipse(11, 8, 5, 9, -0.2, 0, Math.PI * 2);
     ctx.fill();
 
-    // Warm Brown Eyes (with bright anime/pixel sparkle!)
+    // DETAILED OUTFITS BY STAGE
+    if (levelId === 1) {
+      // Stage 1: Quilted Rose-Berry Winter Puffer Coat with Fur Trim & Gold Buttons
+      const coatGrad = ctx.createLinearGradient(-11, 0, 11, 16);
+      coatGrad.addColorStop(0, "#f43f5e");
+      coatGrad.addColorStop(1, "#be123c");
+      ctx.fillStyle = coatGrad;
+      this.roundRect(ctx, -11.5, 0.5, 23, 15, 6);
+      ctx.fill();
+
+      // Quilted stitching lines
+      ctx.strokeStyle = "rgba(136, 19, 55, 0.45)";
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-10, 5.5);
+      ctx.lineTo(10, 5.5);
+      ctx.moveTo(-10.5, 10);
+      ctx.lineTo(10.5, 10);
+      ctx.stroke();
+
+      // Double gold buttons
+      ctx.fillStyle = "#fde047";
+      ctx.beginPath();
+      ctx.arc(-2.2, 4, 1.2, 0, Math.PI * 2);
+      ctx.arc(2.2, 4, 1.2, 0, Math.PI * 2);
+      ctx.arc(-2.2, 8, 1.2, 0, Math.PI * 2);
+      ctx.arc(2.2, 8, 1.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Fluffy cream faux-fur hem trim
+      ctx.fillStyle = "#fff1f2";
+      this.roundRect(ctx, -12, 12.8, 24, 3.8, 2);
+      ctx.fill();
+    } else if (levelId === 2) {
+      // Stage 2: Velvet Emerald & Gold Renaissance Bodice Dress
+      const dressGrad = ctx.createLinearGradient(0, 0, 0, 17);
+      dressGrad.addColorStop(0, "#10b981");
+      dressGrad.addColorStop(1, "#047857");
+      ctx.fillStyle = dressGrad;
+      ctx.beginPath();
+      ctx.moveTo(-9.5, 1);
+      ctx.lineTo(9.5, 1);
+      ctx.lineTo(14, 16.5);
+      ctx.lineTo(-14, 16.5);
+      ctx.closePath();
+      ctx.fill();
+
+      // Cream chemise neckline & gold skirt border
+      ctx.fillStyle = "#fefce8";
+      this.roundRect(ctx, -6, 0.5, 12, 3, 1.5);
+      ctx.fill();
+      ctx.fillStyle = "#fbbf24";
+      ctx.fillRect(-13.5, 14.5, 27, 2);
+
+      // Gold crisis-cross corset lacing
+      ctx.strokeStyle = "#fde047";
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(-3.2, 3.5);
+      ctx.lineTo(3.2, 6.8);
+      ctx.moveTo(3.2, 3.5);
+      ctx.lineTo(-3.2, 6.8);
+      ctx.moveTo(-3.2, 7.2);
+      ctx.lineTo(3.2, 10.5);
+      ctx.moveTo(3.2, 7.2);
+      ctx.lineTo(-3.2, 10.5);
+      ctx.stroke();
+    } else if (levelId === 3) {
+      // Stage 3: Two-Tone Alpine Ski Parka with Chevron Stripe & Zipper
+      ctx.fillStyle = "#7e22ce";
+      this.roundRect(ctx, -12, 0.5, 24, 15.5, 6);
+      ctx.fill();
+
+      // Pink & cyan retro ski chevron
+      ctx.fillStyle = "#f472b6";
+      ctx.beginPath();
+      ctx.moveTo(-11.5, 5);
+      ctx.lineTo(0, 8.5);
+      ctx.lineTo(11.5, 5);
+      ctx.lineTo(11.5, 9);
+      ctx.lineTo(0, 12.5);
+      ctx.lineTo(-11.5, 9);
+      ctx.closePath();
+      ctx.fill();
+
+      // Center zipper line
+      ctx.strokeStyle = "#e2e8f0";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, 1);
+      ctx.lineTo(0, 15.5);
+      ctx.stroke();
+    } else {
+      // Stage 4: Boston Tailored Cranberry Wool Coat & Crossbody Bag
+      ctx.fillStyle = "#be185d";
+      this.roundRect(ctx, -11.5, 0.5, 23, 15.5, 6);
+      ctx.fill();
+
+      // Warm golden scarf & lapels
+      ctx.fillStyle = "#fde047";
+      this.roundRect(ctx, -3.5, 1.5, 7, 13.5, 2);
+      ctx.fill();
+
+      // Crossbody handbag strap
+      ctx.strokeStyle = "#451a03";
+      ctx.lineWidth = 1.6;
+      ctx.beginPath();
+      ctx.moveTo(-8, 2);
+      ctx.lineTo(8, 14);
+      ctx.stroke();
+    }
+
+    // Sleeves & Mittens/Hands
+    const armAngle = isRunningInPlace ? Math.sin(time * 40) * 0.9 : Math.sin(time * 10) * 0.16;
+    ctx.save();
+    ctx.fillStyle = levelId === 2 ? "#fefce8" : (levelId === 3 ? "#7e22ce" : "#e11d48");
+    ctx.translate(-11.5, 4.5);
+    ctx.rotate(armAngle);
+    this.roundRect(ctx, -4, -1.5, 5.2, 9.5, 2.5);
+    ctx.fill();
+    // Mitten / Hand
+    ctx.fillStyle = (levelId === 1 || levelId === 3) ? "#facc15" : (this.config.player.skinTone || "#fad7c0");
+    ctx.beginPath();
+    ctx.arc(-1.4, 8.2, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    ctx.fillStyle = levelId === 2 ? "#fefce8" : (levelId === 3 ? "#7e22ce" : "#e11d48");
+    ctx.translate(11.5, 4.5);
+    ctx.rotate(-armAngle);
+    this.roundRect(ctx, -1.2, -1.5, 5.2, 9.5, 2.5);
+    ctx.fill();
+    ctx.fillStyle = (levelId === 1 || levelId === 3) ? "#facc15" : (this.config.player.skinTone || "#fad7c0");
+    ctx.beginPath();
+    ctx.arc(1.4, 8.2, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+
+    // Knitted Fringed Winter Scarf on Stages 1 & 3
+    if (levelId === 1 || levelId === 3) {
+      ctx.fillStyle = "#fef08a";
+      this.roundRect(ctx, -10.5, -1.2, 21, 4.5, 2.2);
+      ctx.fill();
+      // Red scarf stripes
+      ctx.fillStyle = "#fb7185";
+      ctx.fillRect(-6, -1, 2, 4.2);
+      ctx.fillRect(2, -1, 2, 4.2);
+      // Hanging scarf tail
+      ctx.fillStyle = "#fef08a";
+      this.roundRect(ctx, 4.2, 1.2, 4.8, 9.5, 1.8);
+      ctx.fill();
+      ctx.fillStyle = "#fb7185";
+      ctx.fillRect(4.2, 7.5, 4.8, 1.6);
+    }
+
+    // Head & Delicate Chin Contour
+    ctx.fillStyle = this.config.player.skinTone || "#fad7c0";
+    ctx.beginPath();
+    ctx.arc(0, -8.2, 11.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Layered Black Hair Bangs & Framing Side Locks
+    ctx.fillStyle = this.config.player.hairColor || "#18141c";
+    ctx.beginPath();
+    ctx.arc(0, -10.8, 12.6, Math.PI * 0.9, Math.PI * 2.1);
+    ctx.fill();
+
+    // Sculpted front bangs
+    ctx.beginPath();
+    ctx.moveTo(-11, -11);
+    ctx.quadraticCurveTo(-6, -6.5, -2, -10.5);
+    ctx.quadraticCurveTo(2, -6.2, 6, -10.5);
+    ctx.quadraticCurveTo(9, -7, 11.5, -11);
+    ctx.lineTo(11.5, -16);
+    ctx.lineTo(-11, -16);
+    ctx.closePath();
+    ctx.fill();
+
+    // Framing side locks with tapered tips
+    ctx.beginPath();
+    ctx.ellipse(-11.4, -4.5, 3.8, 9.5, 0.1, 0, Math.PI * 2);
+    ctx.ellipse(11.4, -4.5, 3.8, 9.5, -0.1, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Multi-tone silky hair shine highlights
+    ctx.strokeStyle = this.config.player.hairHighlight || "#3d334c";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.arc(0, -11.5, 9.8, Math.PI * 1.12, Math.PI * 1.45);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, -11.5, 9.8, Math.PI * 1.58, Math.PI * 1.88);
+    ctx.stroke();
+
+    // Cute hair clip on left bang
+    ctx.fillStyle = "#fb7185";
+    this.roundRect(ctx, -9.8, -12.5, 4.2, 2.2, 1);
+    ctx.fill();
+
+    // Stage 3 Ski Goggles resting on forehead
+    if (levelId === 3) {
+      ctx.fillStyle = "#1e293b";
+      this.roundRect(ctx, -9.5, -16.8, 19, 5.8, 2.8);
+      ctx.fill();
+      const goggleGrad = ctx.createLinearGradient(-8, -16, 8, -11);
+      goggleGrad.addColorStop(0, "#38bdf8");
+      goggleGrad.addColorStop(0.5, "#f472b6");
+      goggleGrad.addColorStop(1, "#facc15");
+      ctx.fillStyle = goggleGrad;
+      this.roundRect(ctx, -8.2, -16, 7.5, 4.2, 1.8);
+      this.roundRect(ctx, 0.7, -16, 7.5, 4.2, 1.8);
+      ctx.fill();
+    }
+
+    // Soft Rosy Blush Cheeks
+    ctx.fillStyle = "rgba(244, 114, 182, 0.58)";
+    ctx.beginPath();
+    ctx.ellipse(-6.5, -5.0, 2.8, 1.6, 0, 0, Math.PI * 2);
+    ctx.ellipse(6.5, -5.0, 2.8, 1.6, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Delicate Eyebrows
     const lookX = facing >= 0 ? 0.8 : -0.8;
-    ctx.fillStyle = this.config.player.eyeColor || "#5c3824";
+    ctx.strokeStyle = "#18141c";
+    ctx.lineWidth = 1.1;
     ctx.beginPath();
-    ctx.ellipse(-4.2 + lookX, -7.8, 2.3, 2.7, 0, 0, Math.PI * 2);
-    ctx.ellipse(4.2 + lookX, -7.8, 2.3, 2.7, 0, 0, Math.PI * 2);
-    ctx.fill();
+    ctx.arc(-4.2 + lookX * 0.5, -9.8, 2.8, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.arc(4.2 + lookX * 0.5, -9.8, 2.8, Math.PI * 1.15, Math.PI * 1.85);
+    ctx.stroke();
 
-    // White eye catchlights
-    ctx.fillStyle = "#ffffff";
-    ctx.beginPath();
-    ctx.arc(-4.8 + lookX, -8.7, 0.95, 0, Math.PI * 2);
-    ctx.arc(3.6 + lookX, -8.7, 0.95, 0, Math.PI * 2);
-    ctx.fill();
+    // Detailed Warm Brown Eyes (Outer dark ring + warm amber-brown lower iris + eyelashes + dual catchlights)
+    [-4.3 + lookX, 4.3 + lookX].forEach(ex => {
+      // Sclera base
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.ellipse(ex, -7.6, 2.7, 3.0, 0, 0, Math.PI * 2);
+      ctx.fill();
 
-    // Expression: Surprised "O" when slipping, happy smile otherwise!
+      // Deep brown iris
+      ctx.fillStyle = "#3b2110";
+      ctx.beginPath();
+      ctx.ellipse(ex, -7.5, 2.2, 2.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Warm chestnut lower iris crescent
+      ctx.fillStyle = "#854d27";
+      ctx.beginPath();
+      ctx.arc(ex, -6.9, 1.6, 0, Math.PI);
+      ctx.fill();
+
+      // Upper eyelash line
+      ctx.strokeStyle = "#18141c";
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.arc(ex, -7.7, 2.6, Math.PI * 1.05, Math.PI * 1.95);
+      ctx.stroke();
+
+      // Primary & secondary eye sparkles
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(ex - 0.75, -8.5, 0.95, 0, Math.PI * 2);
+      ctx.arc(ex + 0.85, -6.7, 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Expression: Surprised "O" when slipping, warm happy smile otherwise
     ctx.strokeStyle = "#7c2d12";
-    ctx.lineWidth = 1.4;
+    ctx.lineWidth = 1.3;
     if (isRunningInPlace) {
       ctx.fillStyle = "#fb7185";
       ctx.beginPath();
@@ -292,22 +464,35 @@ class SpriteRenderer {
       ctx.stroke();
     } else {
       ctx.beginPath();
-      ctx.arc(0, -4.8, 2.8, 0.15 * Math.PI, 0.85 * Math.PI);
+      ctx.arc(0, -4.6, 2.8, 0.15 * Math.PI, 0.85 * Math.PI);
       ctx.stroke();
     }
 
-    // Wearable Flower Crown in Level 2 (or if collected)
+    // Detailed Wearable Botanical Flower Crown (Stage 2 or once collected)
     if (levelId === 2 || hasFlowerCrown) {
-      const colors = ["#f472b6", "#facc15", "#60a5fa", "#fb7185", "#a78bfa"];
+      // Green vine band
+      ctx.strokeStyle = "#15803d";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(0, -11.5, 11.5, Math.PI * 1.15, Math.PI * 1.85);
+      ctx.stroke();
+
+      const colors = ["#f472b6", "#facc15", "#60a5fa", "#fb7185", "#c084fc"];
       for (let i = -2; i <= 2; i++) {
+        const fx = i * 4.3;
+        const fy = -18.8 + Math.abs(i) * 0.75;
         ctx.fillStyle = colors[i + 2];
         ctx.beginPath();
-        ctx.arc(i * 4.2, -18.5 + Math.abs(i) * 0.7, 2.6, 0, Math.PI * 2);
+        ctx.arc(fx, fy, 2.7, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = "#fef08a";
+        ctx.beginPath();
+        ctx.arc(fx, fy, 1.0, 0, Math.PI * 2);
         ctx.fill();
       }
     }
 
-    // Confusion dizzy stars (when hit by Jester's juggling pin in Level 2)
+    // Confusion dizzy stars
     if (confuseTimer > 0) {
       for (let i = 0; i < 3; i++) {
         const a = time * 6 + (i * Math.PI * 2) / 3;
@@ -324,11 +509,17 @@ class SpriteRenderer {
   }
 
   /**
-   * Draws Partner Character (Skating Hand-in-Hand in Level 1, or Cutscenes)
+   * Draws Partner Character (Skating Hand-in-Hand in Stage 1, Warlock in Stage 2, or Cutscenes)
+   * Scaled to match Jana (~2x) unless overridden for polaroid thumbnails.
    */
-  drawPartner(ctx, x, y, time = 0, isWarlock = false) {
+  drawPartner(ctx, x, y, time = 0, isWarlock = false, customScale = null) {
     ctx.save();
     ctx.translate(x, y);
+
+    const scale = customScale !== null
+      ? customScale
+      : ((this.config.player && this.config.player.scale) || 1.85);
+    ctx.scale(scale, scale);
 
     // Shadow
     ctx.fillStyle = "rgba(15, 23, 42, 0.25)";
@@ -337,7 +528,7 @@ class SpriteRenderer {
     ctx.fill();
 
     if (isWarlock) {
-      // Black-Caped Warlock Aura (Level 2 Power-Up!)
+      // Black-Caped Warlock Aura (Stage 2 Power-Up!)
       const auraGrad = ctx.createRadialGradient(0, 0, 5, 0, 0, 44);
       auraGrad.addColorStop(0, "rgba(168, 85, 247, 0.65)");
       auraGrad.addColorStop(1, "rgba(88, 28, 135, 0)");
@@ -346,7 +537,7 @@ class SpriteRenderer {
       ctx.arc(0, 0, 44, 0, Math.PI * 2);
       ctx.fill();
 
-      // Flowing Black Warlock Cape
+      // Flowing Black Warlock Cape with Mystical Gold/Violet Runes
       ctx.fillStyle = "#110c1d";
       ctx.strokeStyle = "#a855f7";
       ctx.lineWidth = 1.8;
@@ -372,19 +563,27 @@ class SpriteRenderer {
       ctx.arc(14, -20, 5.5 + Math.sin(time * 12) * 1.5, 0, Math.PI * 2);
       ctx.fill();
     } else {
-      // Winter Jacket & Jeans
+      // Winter Jacket, Jeans & Ice Skates
       ctx.fillStyle = "#1e293b";
-      this.roundRect(ctx, -7, 13, 6, 8, 2);
-      this.roundRect(ctx, 1, 13, 6, 8, 2);
+      this.roundRect(ctx, -7, 13, 5.5, 8, 2);
+      this.roundRect(ctx, 1.5, 13, 5.5, 8, 2);
       ctx.fill();
 
       ctx.fillStyle = this.config.partner.jacketColor || "#2563eb";
-      this.roundRect(ctx, -11, 0, 22, 15, 6);
+      this.roundRect(ctx, -11.5, 0, 23, 15, 6);
       ctx.fill();
+
+      // Jacket zipper & pockets
+      ctx.strokeStyle = "#93c5fd";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, 1);
+      ctx.lineTo(0, 14.5);
+      ctx.stroke();
 
       // Striped winter scarf
       ctx.fillStyle = "#38bdf8";
-      this.roundRect(ctx, -10, -2, 20, 4, 2);
+      this.roundRect(ctx, -10.5, -2, 21, 4.2, 2);
       ctx.fill();
     }
 
@@ -394,17 +593,22 @@ class SpriteRenderer {
     ctx.arc(0, -10, 11.5, 0, Math.PI * 2);
     ctx.fill();
 
-    // Hair
+    // Styled Hair
     ctx.fillStyle = this.config.partner.hairColor || "#3b2718";
     ctx.beginPath();
-    ctx.arc(0, -13, 12, Math.PI * 0.95, Math.PI * 2.05);
+    ctx.arc(0, -13, 12.2, Math.PI * 0.92, Math.PI * 2.08);
     ctx.fill();
 
-    // Eyes & warm smile
+    // Eyes with catchlights & warm smile
     ctx.fillStyle = "#1e293b";
     ctx.beginPath();
-    ctx.arc(-4, -9.5, 2, 0, Math.PI * 2);
-    ctx.arc(4, -9.5, 2, 0, Math.PI * 2);
+    ctx.arc(-4.2, -9.5, 2.1, 0, Math.PI * 2);
+    ctx.arc(4.2, -9.5, 2.1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(-4.7, -10.2, 0.75, 0, Math.PI * 2);
+    ctx.arc(3.7, -10.2, 0.75, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.strokeStyle = "#7c2d12";
@@ -417,325 +621,543 @@ class SpriteRenderer {
   }
 
   /**
-   * Level 1 Obstacle: Wobbly Toddlers & Kids on ice skates
+   * Stage 1 Obstacle: Wobbly Toddlers & Kids on ice skates (1.5x larger & detailed)
    */
   drawWobblyKid(ctx, obs, time) {
     ctx.save();
     ctx.translate(obs.x, obs.y);
     const wobble = Math.sin(time * 9 + obs.seed) * 0.25;
     ctx.rotate(wobble);
+    ctx.scale(1.5, 1.5);
 
     // Shadow
-    ctx.fillStyle = "rgba(15, 23, 42, 0.18)";
+    ctx.fillStyle = "rgba(15, 23, 42, 0.22)";
     ctx.beginPath();
-    ctx.ellipse(0, 16, 12, 4.5, 0, 0, Math.PI * 2);
+    ctx.ellipse(0, 17, 13, 4.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
-    // Puffy toddler snowsuit
-    ctx.fillStyle = obs.color || "#fb923c";
-    this.roundRect(ctx, -9, -1, 18, 13, 6);
-    ctx.fill();
-
-    // Outstretched wobbly mitten arms
-    ctx.strokeStyle = obs.color || "#fb923c";
-    ctx.lineWidth = 4;
+    // Tiny Ice Skates & Blades
+    ctx.fillStyle = "#f8fafc";
     ctx.beginPath();
-    ctx.moveTo(-9, 3);
-    ctx.lineTo(-15, -1 + Math.sin(time * 14 + obs.seed) * 4);
-    ctx.moveTo(9, 3);
-    ctx.lineTo(15, -1 - Math.sin(time * 14 + obs.seed) * 4);
+    ctx.ellipse(-4.5, 14.5, 4, 2.8, 0, 0, Math.PI * 2);
+    ctx.ellipse(4.5, 14.5, 4, 2.8, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(-8, 17.2);
+    ctx.lineTo(-1, 17.2);
+    ctx.moveTo(1, 17.2);
+    ctx.lineTo(8, 17.2);
     ctx.stroke();
 
-    // Head
-    ctx.fillStyle = "#fde68a";
-    ctx.beginPath();
-    ctx.arc(0, -7, 8.5, 0, Math.PI * 2);
+    // Quilted Puffy Toddler Snowsuit
+    ctx.fillStyle = obs.color || "#fb923c";
+    this.roundRect(ctx, -10, -1, 20, 14, 6);
     ctx.fill();
 
-    // Cute pom-pom beanie hat
+    // Snowsuit zipper & quilting seams
+    ctx.strokeStyle = "rgba(15, 23, 42, 0.25)";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, -1);
+    ctx.lineTo(0, 13);
+    ctx.moveTo(-9, 4);
+    ctx.lineTo(9, 4);
+    ctx.moveTo(-9, 8.5);
+    ctx.lineTo(9, 8.5);
+    ctx.stroke();
+
+    // Outstretched Wobbly Arms with Contrasting Mittens
+    const armWave = Math.sin(time * 14 + obs.seed) * 4;
+    ctx.strokeStyle = obs.color || "#fb923c";
+    ctx.lineWidth = 4.2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-9, 3);
+    ctx.lineTo(-15.5, -1 + armWave);
+    ctx.moveTo(9, 3);
+    ctx.lineTo(15.5, -1 - armWave);
+    ctx.stroke();
+
     ctx.fillStyle = obs.hatColor || "#38bdf8";
     ctx.beginPath();
-    ctx.arc(0, -9, 8.8, Math.PI, Math.PI * 2);
+    ctx.arc(-16, -1 + armWave, 2.8, 0, Math.PI * 2);
+    ctx.arc(16, -1 - armWave, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Cozy Scarf
+    ctx.fillStyle = "#fef08a";
+    this.roundRect(ctx, -8.5, -2.2, 17, 3.5, 1.5);
+    ctx.fill();
+
+    // Head & Rosy Cheeks
+    ctx.fillStyle = "#fde68a";
+    ctx.beginPath();
+    ctx.arc(0, -7.5, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "rgba(244, 63, 94, 0.45)";
+    ctx.beginPath();
+    ctx.arc(-5, -5.5, 2, 0, Math.PI * 2);
+    ctx.arc(5, -5.5, 2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Ribbed Knit Pom-Pom Beanie Hat
+    ctx.fillStyle = obs.hatColor || "#38bdf8";
+    ctx.beginPath();
+    ctx.arc(0, -9.5, 9.4, Math.PI, Math.PI * 2);
+    ctx.fill();
+    // Ribbed hat cuff
+    ctx.fillStyle = "#f8fafc";
+    this.roundRect(ctx, -9.5, -11, 19, 3.2, 1.5);
+    ctx.fill();
+    // Fluffy Pom-Pom on top
+    ctx.fillStyle = "#ffffff";
+    ctx.beginPath();
+    ctx.arc(0, -19.5, 4, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Expressive Wide Eyes & Wobbly "O" Mouth
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.arc(-3.2, -7, 1.7, 0, Math.PI * 2);
+    ctx.arc(3.2, -7, 1.7, 0, Math.PI * 2);
     ctx.fill();
     ctx.fillStyle = "#ffffff";
     ctx.beginPath();
-    ctx.arc(0, -18, 3.5, 0, Math.PI * 2);
+    ctx.arc(-3.6, -7.5, 0.6, 0, Math.PI * 2);
+    ctx.arc(2.8, -7.5, 0.6, 0, Math.PI * 2);
     ctx.fill();
 
-    // Eyes
-    ctx.fillStyle = "#1e293b";
+    ctx.fillStyle = "#fb7185";
     ctx.beginPath();
-    ctx.arc(-3, -6.5, 1.5, 0, Math.PI * 2);
-    ctx.arc(3, -6.5, 1.5, 0, Math.PI * 2);
+    ctx.arc(0, -4, 1.6, 0, Math.PI * 2);
     ctx.fill();
 
     ctx.restore();
   }
 
   /**
-   * Level 2 Obstacle: Charging Knight or Mischievous Jester
+   * Stage 2 Obstacle: Charging Knight or Mischievous Jester (1.5x larger & detailed)
    */
   drawRenFaireObstacle(ctx, obs, time) {
     ctx.save();
     ctx.translate(obs.x, obs.y);
+    ctx.scale(1.5, 1.5);
 
     if (obs.subType === "juggling_pin") {
       ctx.rotate(time * 12 + obs.seed);
       ctx.fillStyle = "#ef4444";
-      this.roundRect(ctx, -4, -11, 8, 22, 4);
+      this.roundRect(ctx, -4.5, -12, 9, 24, 4);
       ctx.fill();
       ctx.fillStyle = "#facc15";
-      ctx.fillRect(-4, -3, 8, 5);
+      ctx.fillRect(-4.5, -3, 9, 5);
       ctx.restore();
       return;
     }
 
     // Shadow
-    ctx.fillStyle = "rgba(15, 23, 42, 0.24)";
+    ctx.fillStyle = "rgba(15, 23, 42, 0.26)";
     ctx.beginPath();
     ctx.ellipse(0, 20, 15, 5.5, 0, 0, Math.PI * 2);
     ctx.fill();
 
     if (obs.subType === "knight") {
-      // Charging Knight in shining steel armor
-      const bob = Math.sin(time * 14 + obs.seed) * 2;
+      // Charging Knight in Detailed Plate Armor
+      const bob = Math.sin(time * 14 + obs.seed) * 1.8;
       ctx.translate(0, bob);
 
-      // Crimson cape
+      // Fluttering Crimson Cloak
       ctx.fillStyle = "#dc2626";
-      this.roundRect(ctx, -12, -2, 24, 18, 5);
+      this.roundRect(ctx, -12.5, -2, 25, 18.5, 5);
       ctx.fill();
 
-      // Steel Breastplate
-      ctx.fillStyle = "#94a3b8";
-      ctx.strokeStyle = "#e2e8f0";
-      ctx.lineWidth = 1.5;
-      this.roundRect(ctx, -10, 0, 20, 15, 5);
+      // Steel Greaves / Boots
+      ctx.fillStyle = "#64748b";
+      this.roundRect(ctx, -7, 14, 5, 6, 2);
+      this.roundRect(ctx, 2, 14, 5, 6, 2);
+      ctx.fill();
+
+      // Steel Breastplate with Gold Trim & Lion Shield Emblem
+      const armorGrad = ctx.createLinearGradient(-10, 0, 10, 15);
+      armorGrad.addColorStop(0, "#e2e8f0");
+      armorGrad.addColorStop(0.5, "#94a3b8");
+      armorGrad.addColorStop(1, "#64748b");
+      ctx.fillStyle = armorGrad;
+      ctx.strokeStyle = "#f8fafc";
+      ctx.lineWidth = 1.4;
+      this.roundRect(ctx, -10.5, 0, 21, 15.5, 5);
       ctx.fill();
       ctx.stroke();
 
-      // Visor Helmet
+      // Shoulder Pauldrons
       ctx.fillStyle = "#cbd5e1";
       ctx.beginPath();
-      ctx.arc(0, -9, 10.5, 0, Math.PI * 2);
+      ctx.ellipse(-11.5, 3, 4.2, 5.5, 0.2, 0, Math.PI * 2);
+      ctx.ellipse(11.5, 3, 4.2, 5.5, -0.2, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Helmet slits
-      ctx.fillStyle = "#1e293b";
-      ctx.fillRect(-6, -10, 12, 3);
-
-      // Red Plume feather
-      ctx.fillStyle = "#ef4444";
+      // Golden Heraldic Crest on Chest
+      ctx.fillStyle = "#facc15";
       ctx.beginPath();
-      ctx.ellipse(0, -21, 6, 3.5, -0.2, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Jousting Lance
-      ctx.fillStyle = "#f59e0b";
-      ctx.beginPath();
-      ctx.moveTo(11, 6);
-      ctx.lineTo(28, 3);
-      ctx.lineTo(11, 0);
+      ctx.moveTo(0, 3);
+      ctx.lineTo(4.5, 5.5);
+      ctx.lineTo(0, 11.5);
+      ctx.lineTo(-4.5, 5.5);
       ctx.closePath();
       ctx.fill();
-    } else {
-      // Mischievous Jester
-      ctx.rotate(Math.sin(time * 8 + obs.seed) * 0.18);
-      // Diamond tunic
-      ctx.fillStyle = "#7c3aed";
-      this.roundRect(ctx, -10, 0, 10, 15, 3);
+
+      // Visored Bascinet Helmet
+      ctx.fillStyle = "#cbd5e1";
+      ctx.beginPath();
+      ctx.arc(0, -9, 10.8, 0, Math.PI * 2);
       ctx.fill();
-      ctx.fillStyle = "#facc15";
-      this.roundRect(ctx, 0, 0, 10, 15, 3);
+      ctx.stroke();
+
+      // Brass visor trim & breathing slits
+      ctx.strokeStyle = "#f59e0b";
+      ctx.lineWidth = 1.2;
+      ctx.strokeRect(-7, -11, 14, 4.5);
+      ctx.fillStyle = "#0f172a";
+      ctx.fillRect(-5.5, -9.8, 4.5, 2);
+      ctx.fillRect(1, -9.8, 4.5, 2);
+
+      // Flowing Royal Plume Feather
+      ctx.fillStyle = "#ef4444";
+      ctx.beginPath();
+      ctx.ellipse(2, -21.5, 7.5, 4, -0.25, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#fde047";
+      ctx.beginPath();
+      ctx.ellipse(1, -19.5, 4, 2, -0.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Face
+      // Striped Tournament Jousting Lance (pointing left toward player!)
+      ctx.fillStyle = "#f59e0b";
+      ctx.beginPath();
+      ctx.moveTo(-10, 6.5);
+      ctx.lineTo(-30, 4);
+      ctx.lineTo(-10, 1.5);
+      ctx.closePath();
+      ctx.fill();
+      // Vamplate (lance handguard cone)
+      ctx.fillStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.ellipse(-10, 4, 2.5, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+    } else {
+      // Mischievous Jester in Harlequin Tunic
+      ctx.rotate(Math.sin(time * 8 + obs.seed) * 0.18);
+
+      // Two-tone Harlequin Tunic
+      ctx.fillStyle = "#7c3aed";
+      this.roundRect(ctx, -10.5, 0, 10.5, 15.5, 3);
+      ctx.fill();
+      ctx.fillStyle = "#eab308";
+      this.roundRect(ctx, 0, 0, 10.5, 15.5, 3);
+      ctx.fill();
+
+      // Diamond pattern & jagged collar
+      ctx.fillStyle = "#ec4899";
+      ctx.beginPath();
+      ctx.moveTo(-5, 4);
+      ctx.lineTo(-2, 7.5);
+      ctx.lineTo(-5, 11);
+      ctx.lineTo(-8, 7.5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = "#fef08a";
+      ctx.beginPath();
+      ctx.moveTo(-10, 0);
+      ctx.lineTo(-5, 4);
+      ctx.lineTo(0, 0);
+      ctx.lineTo(5, 4);
+      ctx.lineTo(10, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Face & Cheeky Grin
       ctx.fillStyle = "#fde68a";
       ctx.beginPath();
-      ctx.arc(0, -8, 9, 0, Math.PI * 2);
+      ctx.arc(0, -8, 9.2, 0, Math.PI * 2);
       ctx.fill();
 
-      // Two-horned Jester Hat with bells
+      ctx.fillStyle = "#1e293b";
+      ctx.beginPath();
+      ctx.arc(-3.2, -8.5, 1.6, 0, Math.PI * 2);
+      ctx.arc(3.2, -8.5, 1.6, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = "#991b1b";
+      ctx.lineWidth = 1.4;
+      ctx.beginPath();
+      ctx.arc(0, -6.2, 3.2, 0.1 * Math.PI, 0.9 * Math.PI);
+      ctx.stroke();
+
+      // Two-Horned Jester Hat with Jingling Bells
       ctx.fillStyle = "#ec4899";
       ctx.beginPath();
       ctx.moveTo(-9, -12);
-      ctx.quadraticCurveTo(-16, -24, -4, -16);
+      ctx.quadraticCurveTo(-18, -25, -4, -16);
       ctx.fill();
 
       ctx.fillStyle = "#eab308";
       ctx.beginPath();
       ctx.moveTo(9, -12);
-      ctx.quadraticCurveTo(16, -24, 4, -16);
+      ctx.quadraticCurveTo(18, -25, 4, -16);
       ctx.fill();
 
       ctx.fillStyle = "#fef08a";
+      ctx.strokeStyle = "#ca8a04";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.arc(-13, -21, 3, 0, Math.PI * 2);
-      ctx.arc(13, -21, 3, 0, Math.PI * 2);
+      ctx.arc(-14, -21.5, 3.2, 0, Math.PI * 2);
+      ctx.arc(14, -21.5, 3.2, 0, Math.PI * 2);
       ctx.fill();
+      ctx.stroke();
     }
 
     ctx.restore();
   }
 
   /**
-   * Level 3 Obstacle: Icy Patch or Beginner Skier
+   * Stage 3 Obstacle: Icy Patch or Beginner Skier (1.5x larger & detailed)
    */
   drawSkiObstacle(ctx, obs, time) {
     ctx.save();
     ctx.translate(obs.x, obs.y);
+    ctx.scale(1.5, 1.5);
 
     if (obs.subType === "ice_patch") {
-      // Shimmering slippery ice patch
-      ctx.fillStyle = "rgba(56, 189, 248, 0.38)";
-      ctx.strokeStyle = "rgba(186, 230, 253, 0.85)";
+      // Shimmering Crystalline Slippery Ice Patch
+      const r = obs.radius || 22;
+      const iceGrad = ctx.createRadialGradient(-4, -3, 2, 0, 0, r * 1.15);
+      iceGrad.addColorStop(0, "rgba(224, 242, 254, 0.8)");
+      iceGrad.addColorStop(0.55, "rgba(56, 189, 248, 0.5)");
+      iceGrad.addColorStop(1, "rgba(14, 165, 233, 0.25)");
+      ctx.fillStyle = iceGrad;
+      ctx.strokeStyle = "rgba(186, 230, 253, 0.95)";
       ctx.lineWidth = 2;
       ctx.beginPath();
-      ctx.ellipse(0, 0, obs.radius * 1.35, obs.radius * 0.85, 0.15, 0, Math.PI * 2);
+      ctx.ellipse(0, 0, r * 1.15, r * 0.72, 0.12, 0, Math.PI * 2);
       ctx.fill();
       ctx.stroke();
 
-      // Glint lines
-      ctx.strokeStyle = "rgba(255, 255, 255, 0.75)";
+      // Inner crystal facet & glint lines
+      ctx.strokeStyle = "rgba(255, 255, 255, 0.85)";
       ctx.lineWidth = 1.8;
       ctx.beginPath();
-      ctx.moveTo(-12, -4);
-      ctx.lineTo(6, -9);
-      ctx.moveTo(-6, 6);
-      ctx.lineTo(14, 1);
+      ctx.moveTo(-11, -3);
+      ctx.lineTo(5, -8);
+      ctx.moveTo(-5, 5);
+      ctx.lineTo(12, 1);
+      ctx.moveTo(-2, -1);
+      ctx.lineTo(4, -3);
       ctx.stroke();
       ctx.restore();
       return;
     }
 
-    // Slower Beginner Skier making wide pizza turns
-    ctx.rotate(Math.sin(time * 4 + obs.seed) * 0.25);
-    // Pizza-wedge skis
-    ctx.strokeStyle = "#ef4444";
-    ctx.lineWidth = 4;
+    // Slower Beginner Skier in Pizza-Wedge Stance with Poles & Goggles
+    ctx.rotate(Math.sin(time * 4 + obs.seed) * 0.22);
+
+    // Shadow
+    ctx.fillStyle = "rgba(15, 23, 42, 0.2)";
     ctx.beginPath();
-    ctx.moveTo(-14, 18);
+    ctx.ellipse(0, 17, 14, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Snowplow ("Pizza Wedge") Skis
+    ctx.strokeStyle = "#ef4444";
+    ctx.lineWidth = 4.2;
+    ctx.lineCap = "round";
+    ctx.beginPath();
+    ctx.moveTo(-15, 18);
     ctx.lineTo(-3, -4);
-    ctx.moveTo(14, 18);
+    ctx.moveTo(15, 18);
     ctx.lineTo(3, -4);
     ctx.stroke();
 
-    // Neon ski suit
-    ctx.fillStyle = obs.color || "#10b981";
-    this.roundRect(ctx, -9, -1, 18, 14, 5);
-    ctx.fill();
+    // Outstretched Ski Poles with Baskets
+    ctx.strokeStyle = "#475569";
+    ctx.lineWidth = 1.6;
+    ctx.beginPath();
+    ctx.moveTo(-9, 3);
+    ctx.lineTo(-18, 12);
+    ctx.moveTo(9, 3);
+    ctx.lineTo(18, 12);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(-18, 12, 2.5, 0, Math.PI * 2);
+    ctx.arc(18, 12, 2.5, 0, Math.PI * 2);
+    ctx.stroke();
 
-    // Head & Goggles
+    // Retro Ski Suit with Chevron Stripe
+    ctx.fillStyle = obs.color || "#10b981";
+    this.roundRect(ctx, -9.5, -1, 19, 14.5, 5);
+    ctx.fill();
+    ctx.fillStyle = "#fef08a";
+    ctx.fillRect(-9, 4, 18, 3.2);
+
+    // Head, Helmet & Reflective Ski Goggles
     ctx.fillStyle = "#fed7aa";
     ctx.beginPath();
-    ctx.arc(0, -8, 8.5, 0, Math.PI * 2);
+    ctx.arc(0, -8, 8.8, 0, Math.PI * 2);
     ctx.fill();
 
-    ctx.fillStyle = "#f97316";
-    this.roundRect(ctx, -7, -11, 14, 5, 2);
+    // Ski Helmet
+    ctx.fillStyle = "#1e293b";
+    ctx.beginPath();
+    ctx.arc(0, -9.8, 9.2, Math.PI * 0.95, Math.PI * 2.05);
     ctx.fill();
+
+    // Tinted Goggles with Glint
+    ctx.fillStyle = "#f97316";
+    ctx.strokeStyle = "#ffffff";
+    ctx.lineWidth = 1;
+    this.roundRect(ctx, -7.5, -11, 15, 5.2, 2.2);
+    ctx.fill();
+    ctx.stroke();
 
     ctx.restore();
   }
 
   /**
-   * Level 4 Obstacle: Witch from Salem or Exploding Sprite Drink
+   * Stage 4 Obstacle: Witch from Salem or Exploding Sprite Drink (1.5x larger & detailed)
    */
   drawBostonObstacle(ctx, obs, time) {
     ctx.save();
     ctx.translate(obs.x, obs.y);
+    ctx.scale(1.5, 1.5);
 
     if (obs.subType === "witch") {
-      // Witch from Salem flying on a wooden broomstick
-      const hover = Math.sin(time * 7 + obs.seed) * 3.5;
+      // Witch from Salem flying on a detailed wooden broomstick
+      const hover = Math.sin(time * 7 + obs.seed) * 3.0;
       ctx.translate(0, hover);
 
-      // Broomstick
-      ctx.strokeStyle = "#92400e";
-      ctx.lineWidth = 3.5;
+      // Crooked Wooden Broomstick shaft
+      ctx.strokeStyle = "#78350f";
+      ctx.lineWidth = 3.6;
+      ctx.lineCap = "round";
       ctx.beginPath();
-      ctx.moveTo(-22, 10);
-      ctx.lineTo(18, 6);
+      ctx.moveTo(-20, 7);
+      ctx.quadraticCurveTo(0, 9, 22, 10);
       ctx.stroke();
 
-      // Bristles
+      // Bundled Birch Twig Bristles on back (right side)
       ctx.fillStyle = "#d97706";
+      ctx.strokeStyle = "#92400e";
+      ctx.lineWidth = 1;
       ctx.beginPath();
-      ctx.moveTo(-20, 10);
-      ctx.lineTo(-30, 4);
-      ctx.lineTo(-29, 16);
+      ctx.moveTo(18, 10);
+      ctx.lineTo(31, 4);
+      ctx.lineTo(33, 10);
+      ctx.lineTo(30, 16);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
+      // Gold binding twine on broom
+      ctx.fillStyle = "#facc15";
+      ctx.fillRect(17, 7.5, 2.5, 5);
 
-      // Purple/Black Witch Cloak
+      // Flowing Midnight-Purple Witch Cloak
       ctx.fillStyle = "#3b0764";
+      ctx.strokeStyle = "#7e22ce";
+      ctx.lineWidth = 1.2;
       ctx.beginPath();
-      ctx.moveTo(-8, -2);
-      ctx.lineTo(8, -2);
-      ctx.lineTo(13, 14);
-      ctx.lineTo(-13, 14);
+      ctx.moveTo(-8.5, -2);
+      ctx.lineTo(8.5, -2);
+      ctx.lineTo(14, 14.5);
+      ctx.lineTo(-13, 14.5);
       ctx.closePath();
       ctx.fill();
+      ctx.stroke();
 
-      // Green-tinted face
+      // Emerald-tinted Witch Face & Expressive Eyes
       ctx.fillStyle = "#86efac";
       ctx.beginPath();
-      ctx.arc(0, -8, 8, 0, Math.PI * 2);
+      ctx.arc(0, -8, 8.4, 0, Math.PI * 2);
       ctx.fill();
 
-      // Pointed Salem Witch Hat
       ctx.fillStyle = "#1e1b4b";
       ctx.beginPath();
-      ctx.ellipse(0, -13, 14, 3.5, 0, 0, Math.PI * 2);
+      ctx.arc(-3, -8, 1.5, 0, Math.PI * 2);
+      ctx.arc(2.5, -8, 1.5, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Pointed Salem Witch Hat with Gold Buckle
+      ctx.fillStyle = "#1e1b4b";
+      ctx.beginPath();
+      ctx.ellipse(0, -13, 14.5, 3.6, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.beginPath();
-      ctx.moveTo(-8, -13);
-      ctx.lineTo(2, -28);
-      ctx.lineTo(8, -13);
+      ctx.moveTo(-8.5, -13);
+      ctx.lineTo(3, -29);
+      ctx.lineTo(8.5, -13);
       ctx.closePath();
       ctx.fill();
+
+      // Hat ribbon & gold buckle
+      ctx.fillStyle = "#7e22ce";
+      ctx.fillRect(-7.2, -16, 14.4, 3);
+      ctx.strokeStyle = "#facc15";
+      ctx.lineWidth = 1.4;
+      ctx.strokeRect(-2.5, -16.5, 5, 3.8);
     } else {
-      // Exploding Sprite Drink Can (Fizzing lemon-lime soda!)
-      const shake = obs.fizzPhase > 0.6 ? Math.sin(time * 55) * 3 : 0;
+      // Exploding Sprite Drink Can (1.5x Detailed Lemon-Lime Soda Can)
+      const shake = obs.fizzPhase > 0.55 ? Math.sin(time * 55) * 2.5 : 0;
       ctx.translate(shake, 0);
 
-      // Fizz splash ring when popping!
+      // Multi-ring fizzy splash when popping
       if (obs.popping) {
-        ctx.strokeStyle = "rgba(134, 239, 172, 0.85)";
-        ctx.fillStyle = "rgba(74, 222, 128, 0.25)";
-        ctx.lineWidth = 3;
+        ctx.strokeStyle = "rgba(134, 239, 172, 0.9)";
+        ctx.fillStyle = "rgba(74, 222, 128, 0.28)";
+        ctx.lineWidth = 2.5;
         ctx.beginPath();
-        ctx.arc(0, 0, obs.popRadius || 36, 0, Math.PI * 2);
+        ctx.arc(0, 0, obs.popRadius || 28, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
       }
 
-      // Bright green Sprite can
-      ctx.fillStyle = "#16a34a";
+      // Metallic Green Can Body with Specular Highlight
+      const canGrad = ctx.createLinearGradient(-10, 0, 10, 0);
+      canGrad.addColorStop(0, "#15803d");
+      canGrad.addColorStop(0.35, "#22c55e");
+      canGrad.addColorStop(1, "#166534");
+      ctx.fillStyle = canGrad;
       ctx.strokeStyle = "#dcfce7";
-      ctx.lineWidth = 1.5;
-      this.roundRect(ctx, -10, -14, 20, 28, 4);
+      ctx.lineWidth = 1.4;
+      this.roundRect(ctx, -10.5, -14, 21, 28, 4);
       ctx.fill();
       ctx.stroke();
 
-      // Yellow lemon-lime burst logo
+      // Lemon-Lime Yellow & White Splash Emblem
       ctx.fillStyle = "#facc15";
       ctx.beginPath();
-      ctx.arc(0, 0, 6, 0, Math.PI * 2);
+      ctx.arc(0, 0, 6.5, 0, Math.PI * 2);
       ctx.fill();
-
-      // Silver top tab
-      ctx.fillStyle = "#cbd5e1";
-      ctx.beginPath();
-      ctx.ellipse(0, -14, 9, 3, 0, 0, Math.PI * 2);
-      ctx.fill();
-
-      // Rising fizz bubbles
       ctx.fillStyle = "#ffffff";
-      for (let i = 0; i < 3; i++) {
-        const by = -18 - ((time * 24 + i * 7 + obs.seed) % 14);
-        const bx = (i - 1) * 5;
+      ctx.beginPath();
+      ctx.arc(-2, -1.5, 2.2, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Silver Top & Bottom Can Rims
+      ctx.fillStyle = "#e2e8f0";
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 9.8, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#94a3b8";
+      ctx.beginPath();
+      ctx.ellipse(0, -14, 4, 1.4, 0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Rising Fizz Bubbles
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 4; i++) {
+        const by = -18 - ((time * 24 + i * 6 + obs.seed) % 15);
+        const bx = (i - 1.5) * 4.2;
         ctx.beginPath();
         ctx.arc(bx, by, 2.2, 0, Math.PI * 2);
         ctx.fill();
@@ -1392,19 +1814,18 @@ class SpriteRenderer {
 
     // Draw Partner & Jana side-by-side smiling for Chloe's Mom's camera!
     ctx.save();
-    ctx.translate(w * 0.42, h * 0.68);
-    ctx.scale(1.45, 1.45);
-    this.drawPartner(ctx, 0, 0, time, false);
+    ctx.translate(w * 0.41, h * 0.68);
+    this.drawPartner(ctx, 0, 0, time, false, 1.35);
     ctx.restore();
 
     ctx.save();
     ctx.translate(w * 0.59, h * 0.70);
-    ctx.scale(1.45, 1.45);
     this.drawJana(ctx, 0, 0, {
       levelId: 1,
       time,
       hasFlowerCrown: false,
-      facing: -1
+      facing: -1,
+      customScale: 1.35
     });
     ctx.restore();
 

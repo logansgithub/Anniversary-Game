@@ -16,29 +16,29 @@ class LevelBuilder {
       1: {
         baseScrollSpeed: 210,      // px per second
         baseObstacleSpeed: 245,    // px per second moving left
-        baseSpawnInterval: 1.15,   // seconds between obstacle spawns
-        minSpawnInterval: 0.52,
-        stageDurationSec: 28       // seconds of scrolling before goal appears on right
+        baseSpawnInterval: 1.35,   // seconds between obstacle spawns
+        minSpawnInterval: 0.72,
+        stageDurationSec: 28       // seconds of scrolling before finish line appears
       },
       2: {
         baseScrollSpeed: 235,
         baseObstacleSpeed: 275,
-        baseSpawnInterval: 1.05,
-        minSpawnInterval: 0.48,
+        baseSpawnInterval: 1.25,
+        minSpawnInterval: 0.68,
         stageDurationSec: 30
       },
       3: {
         baseScrollSpeed: 265,
         baseObstacleSpeed: 305,
-        baseSpawnInterval: 0.98,
-        minSpawnInterval: 0.45,
+        baseSpawnInterval: 1.18,
+        minSpawnInterval: 0.64,
         stageDurationSec: 32
       },
       4: {
         baseScrollSpeed: 310,      // High-speed Cop Slide momentum!
         baseObstacleSpeed: 345,
-        baseSpawnInterval: 0.88,
-        minSpawnInterval: 0.40,
+        baseSpawnInterval: 1.08,
+        minSpawnInterval: 0.58,
         stageDurationSec: 34
       }
     };
@@ -59,15 +59,15 @@ class LevelBuilder {
 
     // Pick a varied Y position so the player has to weave Up, Down, Left, and Right
     let y = minY + Math.random() * (maxY - minY);
-    if (lastSpawnY !== null && Math.abs(y - lastSpawnY) < 55) {
-      y = minY + ((y - minY + 130) % (maxY - minY));
+    if (lastSpawnY !== null && Math.abs(y - lastSpawnY) < 82) {
+      y = minY + ((y - minY + 145) % (maxY - minY));
     }
 
-    const spawnX = width + 36;
+    const spawnX = width + 48;
     const seed = Math.random() * 100;
 
     if (levelId === 1) {
-      // Stage 1: Wobbly Toddlers & Kids skating right-to-left
+      // Stage 1: Wobbly Toddlers & Kids skating right-to-left (1.5x size)
       const suitColors = ["#fb923c", "#38bdf8", "#a855f7", "#4ade80", "#f43f5e", "#facc15"];
       const hatColors = ["#f472b6", "#fef08a", "#60a5fa", "#34d399", "#fbbf24", "#c084fc"];
       const idx = Math.floor(Math.random() * suitColors.length);
@@ -79,15 +79,15 @@ class LevelBuilder {
         y,
         vx: -(235 + Math.random() * 65) * speedMultiplier,
         vy: (Math.random() - 0.5) * 95,
-        radius: 16,
-        hitboxW: 24,
-        hitboxH: 30,
+        radius: 24,
+        hitboxW: 34,
+        hitboxH: 42,
         seed,
         color: suitColors[idx],
         hatColor: hatColors[idx]
       };
     } else if (levelId === 2) {
-      // Stage 2: Charging Knights & Mischievous Jesters
+      // Stage 2: Charging Knights & Mischievous Jesters (1.5x size)
       const isKnight = Math.random() < 0.58;
       return {
         id: `ren_${Date.now()}_${Math.random()}`,
@@ -97,13 +97,13 @@ class LevelBuilder {
         y,
         vx: -(isKnight ? 290 : 235) * speedMultiplier,
         vy: isKnight ? 0 : (Math.random() - 0.5) * 110,
-        radius: 17,
-        hitboxW: 26,
-        hitboxH: 32,
+        radius: 25,
+        hitboxW: 36,
+        hitboxH: 45,
         seed
       };
     } else if (levelId === 3) {
-      // Stage 3: Slippery Ice Patches & Beginner Skiers
+      // Stage 3: Slippery Ice Patches & Beginner Skiers (1.5x size)
       const isIce = Math.random() < 0.42;
       return {
         id: `ski_${Date.now()}_${Math.random()}`,
@@ -113,14 +113,14 @@ class LevelBuilder {
         y,
         vx: -(isIce ? 265 : 295) * speedMultiplier,
         vy: isIce ? 0 : Math.sin(seed) * 85,
-        radius: isIce ? 22 : 16,
-        hitboxW: isIce ? 36 : 24,
-        hitboxH: isIce ? 24 : 30,
+        radius: isIce ? 22 : 24,
+        hitboxW: isIce ? 48 : 34,
+        hitboxH: isIce ? 32 : 42,
         color: ["#10b981", "#f97316", "#3b82f6", "#ec4899"][Math.floor(Math.random() * 4)],
         seed
       };
     } else {
-      // Stage 4: Witches from Salem & Exploding Sprite Drinks
+      // Stage 4: Witches from Salem & Exploding Sprite Drinks (1.5x size)
       const isWitch = Math.random() < 0.55;
       return {
         id: `bos_${Date.now()}_${Math.random()}`,
@@ -130,13 +130,13 @@ class LevelBuilder {
         y,
         vx: -(isWitch ? 330 : 285) * speedMultiplier,
         vy: isWitch ? (Math.random() - 0.5) * 115 : (Math.random() - 0.5) * 45,
-        radius: 17,
-        hitboxW: isWitch ? 30 : 22,
-        hitboxH: isWitch ? 28 : 28,
+        radius: 25,
+        hitboxW: isWitch ? 42 : 32,
+        hitboxH: isWitch ? 40 : 40,
         seed,
         fizzPhase: Math.random() * 0.6,
         popping: false,
-        popRadius: 24
+        popRadius: 28
       };
     }
   }

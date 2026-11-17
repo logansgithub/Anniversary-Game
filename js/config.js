@@ -22,7 +22,7 @@ window.GAME_CONFIG = {
     eyeColor: "#5c3824",        // Brown eyes
     skinTone: "#fad7c0",
     blushColor: "#f4979c",
-    scale: 0.92                 // Petite / small stature
+    scale: 1.85                 // ~2x larger detailed player sprite
   },
 
   // Partner Profile (Appears in Level 1 Hand-in-Hand, Level 2 Warlock, Cutscenes)
