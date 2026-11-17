@@ -67,27 +67,35 @@ window.GAME_CONFIG = {
     }
   },
 
-  // Level 1 Polaroid Photos (Taken by Chloe's Mom when Jana reaches the bench!)
-  // Drop your real photos into assets/photos/ and set imageSrc below.
-  // If an image file is missing, the game automatically renders a keepsake illustration!
+  // Finale Photo Highlights (Displayed on the final Victory screen)
   level1Photos: [
     {
-      imageSrc: "assets/photos/first_date_1.jpg",
-      caption: "Skating hand-in-hand under the twinkling lights",
-      dateTag: "Memory I",
-      sceneType: "rink_hug"
+      imageSrc: "assets/photos/level1_photo1.jpg",
+      caption: "Skating hand-in-hand on our first date",
+      dateTag: "Stage I",
+      sceneType: "rink_hug",
+      levelId: 1
     },
     {
-      imageSrc: "assets/photos/first_date_2.jpg",
-      caption: "Warming up with hot cocoa (Photo credit: Chloe's Mom!)",
-      dateTag: "Memory II",
-      sceneType: "cocoa_bench"
+      imageSrc: "assets/photos/level2_photo1.jpg",
+      caption: "Renaissance Faire adventures together",
+      dateTag: "Stage II",
+      sceneType: "ren_crown",
+      levelId: 2
     },
     {
-      imageSrc: "assets/photos/first_date_3.jpg",
-      caption: "Big smiles, rosy cheeks, and the beginning of our adventure",
-      dateTag: "Memory III",
-      sceneType: "snowy_selfie"
+      imageSrc: "assets/photos/level3_photo1.jpg",
+      caption: "Winter ski trip & cozy fondue night",
+      dateTag: "Stage III",
+      sceneType: "ski_slope",
+      levelId: 3
+    },
+    {
+      imageSrc: "assets/photos/level4_photo1.jpg",
+      caption: "Celebrating together in Boston",
+      dateTag: "Stage IV",
+      sceneType: "boston_slide",
+      levelId: 4
     }
   ],
 
