@@ -1168,6 +1168,119 @@ class SpriteRenderer {
   }
 
   /**
+   * Renders the full-stage Sprite Can Explosion animation when hit on Level 4
+   * before transitioning to the Game Over screen!
+   */
+  drawSpriteCanExplosion(ctx, exp, time) {
+    if (!exp) return;
+    ctx.save();
+    ctx.translate(exp.x, exp.y);
+
+    const p = exp.progress; // 0.0 -> 1.0 over 1.45s
+
+    if (p < 0.22) {
+      // Phase 1: Pressurized Can Bulging & Shaking Violently!
+      const bulge = 1.5 + (p / 0.22) * 1.15;
+      const shakeX = Math.sin(time * 95) * 6;
+      const shakeY = Math.cos(time * 85) * 4;
+      ctx.translate(shakeX, shakeY);
+      ctx.scale(bulge, bulge * 0.92);
+
+      // Glowing pressurized aura
+      ctx.fillStyle = "rgba(163, 230, 53, 0.55)";
+      ctx.beginPath();
+      ctx.arc(0, 0, 24, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Swelling Green Can
+      ctx.fillStyle = "#22c55e";
+      ctx.strokeStyle = "#fef08a";
+      ctx.lineWidth = 2;
+      this.roundRect(ctx, -11, -14, 22, 28, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = "#facc15";
+      ctx.beginPath();
+      ctx.arc(0, 0, 7, 0, Math.PI * 2);
+      ctx.fill();
+
+      // High-pressure foam geyser shooting out the top tab
+      ctx.fillStyle = "#ffffff";
+      for (let i = 0; i < 6; i++) {
+        ctx.beginPath();
+        ctx.arc((i - 2.5) * 3.5, -18 - (p * 60) - (i % 2) * 5, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    } else {
+      // Phase 2: Massive Lemon-Lime Soda & Foam Blast!
+      const blastP = (p - 0.22) / 0.78; // 0.0 -> 1.0
+      const alpha = Math.max(0, 1 - blastP * 0.85);
+
+      // Outer Lime Shockwave Ring
+      ctx.strokeStyle = `rgba(74, 222, 128, ${alpha})`;
+      ctx.fillStyle = `rgba(34, 197, 94, ${alpha * 0.22})`;
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.arc(0, 0, 28 + blastP * 190, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Inner Lemon-Yellow Burst Ring
+      ctx.strokeStyle = `rgba(250, 204, 21, ${alpha})`;
+      ctx.fillStyle = `rgba(254, 240, 138, ${alpha * 0.35})`;
+      ctx.lineWidth = 5;
+      ctx.beginPath();
+      ctx.arc(0, 0, 16 + blastP * 135, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.stroke();
+
+      // Central White Carbonation Foam Starburst
+      if (blastP < 0.55) {
+        const coreAlpha = 1 - blastP / 0.55;
+        ctx.fillStyle = `rgba(255, 255, 255, ${coreAlpha})`;
+        ctx.beginPath();
+        const spikes = 12;
+        for (let i = 0; i < spikes * 2; i++) {
+          const r = i % 2 === 0 ? 55 * (0.4 + blastP) : 24 * (0.4 + blastP);
+          const a = (i * Math.PI) / spikes + time * 4;
+          const sx = Math.cos(a) * r;
+          const sy = Math.sin(a) * r;
+          if (i === 0) ctx.moveTo(sx, sy);
+          else ctx.lineTo(sx, sy);
+        }
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      // Flying Aluminum Can Shards & Fizzy Soda Droplets
+      (exp.droplets || []).forEach(d => {
+        const dx = d.vx * blastP * 165;
+        const dy = d.vy * blastP * 165 + 0.5 * 140 * blastP * blastP;
+        ctx.save();
+        ctx.translate(dx, dy);
+        ctx.globalAlpha = alpha;
+        if (d.isShard) {
+          ctx.rotate(blastP * d.rotSpeed);
+          ctx.fillStyle = d.color;
+          ctx.strokeStyle = "#e2e8f0";
+          ctx.lineWidth = 1;
+          ctx.fillRect(-6, -4, 12, 8);
+          ctx.strokeRect(-6, -4, 12, 8);
+        } else {
+          ctx.fillStyle = d.color;
+          ctx.beginPath();
+          ctx.arc(0, 0, d.r, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        ctx.restore();
+      });
+    }
+
+    ctx.restore();
+  }
+
+  /**
    * Draws Level Collectibles & Special Power-Up Tokens (~1.7x larger & more detailed)
    */
   drawCollectible(ctx, item, time) {

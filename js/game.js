@@ -52,9 +52,11 @@ class AnniversaryGame {
     // Cutscene / Camera Flash State (Stage 1 Chloe's Mom photo shoot & Stage 4 Cop Slide Intro)
     this.cutsceneTimer = 0;
     this.cameraFlash = 0;
+    this.spriteExplosion = null;
     this.shutterCount = 0;
     this.introSlideTimer = 0;
     this.introSlideDuration = 5.0;
+    this.spriteExplosion = null;
 
     // Fondue Ingredient Tracker (Stage 3)
     this.fondueCollected = {
@@ -271,6 +273,7 @@ class AnniversaryGame {
     this.warlockShockwave = 0;
     this.cutsceneTimer = 0;
     this.cameraFlash = 0;
+    this.spriteExplosion = null;
 
     if (levelCfg.id === 3) {
       this.fondueCollected = {
@@ -316,6 +319,90 @@ class AnniversaryGame {
     const overlay = document.getElementById("gameOverOverlay");
     if (overlay) {
       overlay.classList.remove("hidden");
+    }
+  }
+
+  /**
+   * Triggers a 1.45-second pressurized Sprite Can explosion animation on Level 4
+   * before showing the Game Over screen!
+   */
+  triggerSpriteCanExplosion(x, y) {
+    this.state = "SPRITE_EXPLODING";
+    window.soundManager.playFizzPop();
+    this.player.slipTimer = 1.45;
+    this.player.vx = 0;
+    this.player.vy = 0;
+
+    // Generate radial fizzy soda droplets & spinning green/silver aluminum can shards
+    const droplets = [];
+    const colors = ["#4ade80", "#facc15", "#ffffff", "#22c55e", "#fef08a", "#bbf7d0"];
+    for (let i = 0; i < 34; i++) {
+      const angle = (i / 34) * Math.PI * 2 + (Math.random() - 0.5) * 0.25;
+      const spd = 0.45 + Math.random() * 0.85;
+      droplets.push({
+        vx: Math.cos(angle) * spd,
+        vy: Math.sin(angle) * spd - 0.25,
+        r: 3.5 + Math.random() * 5,
+        color: colors[i % colors.length],
+        isShard: i % 5 === 0,
+        rotSpeed: (Math.random() - 0.5) * 18
+      });
+    }
+
+    this.spriteExplosion = {
+      x,
+      y,
+      timer: 1.45,
+      duration: 1.45,
+      progress: 0,
+      burstTriggered: false,
+      droplets
+    };
+
+    this.addFloatingText(x, y - 36, "🥫⚠️ FIZZZZ...", "#fde047");
+  }
+
+  updateSpriteExplosion(dt) {
+    if (!this.spriteExplosion) {
+      this.triggerGameOver();
+      return;
+    }
+
+    this.spriteExplosion.timer -= dt;
+    const elapsed = this.spriteExplosion.duration - Math.max(0, this.spriteExplosion.timer);
+    this.spriteExplosion.progress = Math.min(1, elapsed / this.spriteExplosion.duration);
+
+    // At 0.22 progress, the bulging Sprite can bursts open!
+    if (this.spriteExplosion.progress >= 0.22 && !this.spriteExplosion.burstTriggered) {
+      this.spriteExplosion.burstTriggered = true;
+      this.addFloatingText(
+        this.spriteExplosion.x,
+        this.spriteExplosion.y - 48,
+        "💥 FIZZ BOOOOOM!!",
+        "#4ade80"
+      );
+      const icons = ["💥", "🫧", "🍋", "💦"];
+      for (let i = 0; i < 16; i++) {
+        this.spawnParticle(
+          this.spriteExplosion.x + (Math.random() - 0.5) * 30,
+          this.spriteExplosion.y + (Math.random() - 0.5) * 30,
+          icons[i % icons.length]
+        );
+      }
+    }
+
+    // Knock Jana back slightly during the blast wave
+    if (this.spriteExplosion.progress >= 0.22 && this.spriteExplosion.progress < 0.65) {
+      const dirX = this.player.x <= this.spriteExplosion.x ? -1 : 1;
+      this.player.x = Math.max(40, Math.min(this.width - 40, this.player.x + dirX * 95 * dt));
+      this.player.spinAngle += dt * 14;
+    }
+
+    this.updateParticles(dt);
+
+    if (this.spriteExplosion.timer <= 0) {
+      this.player.spinAngle = 0;
+      this.triggerGameOver();
     }
   }
 
@@ -396,6 +483,11 @@ class AnniversaryGame {
 
     if (this.state === "INTRO_SLIDE") {
       this.updateIntroSlide(dt);
+      return;
+    }
+
+    if (this.state === "SPRITE_EXPLODING") {
+      this.updateSpriteExplosion(dt);
       return;
     }
 
@@ -619,7 +711,15 @@ class AnniversaryGame {
           this.obstacles.splice(i, 1);
           continue;
         } else {
-          // Player hit an obstacle without shield -> Trigger 'Game Over' screen with 'Restart' button!
+          // If hit a Sprite Can on Level 4, play the exploding Sprite animation before Game Over!
+          if (obs.subType === "sprite_can") {
+            const exX = obs.x;
+            const exY = obs.y;
+            this.obstacles.splice(i, 1);
+            this.triggerSpriteCanExplosion(exX, exY);
+            return;
+          }
+          // Standard obstacle collision -> Trigger 'Game Over' screen with 'Restart' button!
           this.triggerGameOver();
           return;
         }
@@ -1028,6 +1128,21 @@ class AnniversaryGame {
 
     ctx.clearRect(0, 0, this.width, this.height);
 
+    ctx.save();
+    // Apply screen shake during the Sprite Can explosion blast wave!
+    if (
+      this.state === "SPRITE_EXPLODING" &&
+      this.spriteExplosion &&
+      this.spriteExplosion.progress >= 0.22 &&
+      this.spriteExplosion.progress < 0.75
+    ) {
+      const shakeMag = (1 - this.spriteExplosion.progress) * 12;
+      ctx.translate(
+        (Math.random() - 0.5) * shakeMag * 2,
+        (Math.random() - 0.5) * shakeMag * 2
+      );
+    }
+
     // 1. Draw Seamlessly Looping Horizontal Scrolling Environment & Static Finish Line
     this.sprites.drawEnvironment(ctx, this.width, this.height, levelId, this.time, {
       scrollOffset: this.scrollOffset,
@@ -1056,6 +1171,11 @@ class AnniversaryGame {
         this.sprites.drawBostonObstacle(ctx, obs, this.time);
       }
     });
+
+    // 3b. Draw Sprite Can Explosion Animation if active
+    if (this.state === "SPRITE_EXPLODING" && this.spriteExplosion) {
+      this.sprites.drawSpriteCanExplosion(ctx, this.spriteExplosion, this.time);
+    }
 
     // 4. Draw Warlock Magic Spell Shockwave Ring (Stage 2)
     if (this.warlockShockwave > 0) {
@@ -1192,6 +1312,8 @@ class AnniversaryGame {
       ctx.fillRect(0, 0, this.width, this.height);
       ctx.restore();
     }
+
+    ctx.restore();
   }
 
   gameLoop(timestamp) {

@@ -112,9 +112,13 @@ class SoundManager {
   }
 
   playFizzPop() {
-    // Sprite soda pop burst
-    this.playTone(220, "square", 0.09, 0, 0.15, 760);
-    this.playTone(540, "triangle", 0.12, 0.05, 0.18, 180);
+    // Pressurized soda hiss -> big carbonation explosion -> fizzy bubble pops!
+    this.playTone(320, "sawtooth", 0.22, 0.0, 0.25, 880);
+    this.playTone(140, "square", 0.38, 0.22, 0.35, 42);
+    this.playTone(95, "sawtooth", 0.42, 0.24, 0.32, 35);
+    [520, 740, 610, 890, 480].forEach((f, i) => {
+      this.playTone(f, "sine", 0.08, 0.32 + i * 0.07, 0.22, f * 1.4);
+    });
   }
 
   playCameraShutter() {
