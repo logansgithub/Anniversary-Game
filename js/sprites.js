@@ -781,15 +781,6 @@ class SpriteRenderer {
     ctx.textBaseline = "middle";
     ctx.fillText(item.icon || "❄️", 0, 1);
 
-    if (isPowerToken) {
-      ctx.font = "bold 10px 'Nunito', sans-serif";
-      ctx.fillStyle = "#fef08a";
-      ctx.strokeStyle = "#0f172a";
-      ctx.lineWidth = 2.5;
-      ctx.strokeText("POWER-UP", 0, 24);
-      ctx.fillText("POWER-UP", 0, 24);
-    }
-
     ctx.restore();
   }
 
@@ -1064,7 +1055,7 @@ class SpriteRenderer {
     ctx.save();
     ctx.translate(x, y);
 
-    // Goal zone aura
+    // Subtle warm goal aura
     const pulse = 1 + Math.sin(time * 5) * 0.06;
     ctx.fillStyle = "rgba(251, 191, 36, 0.22)";
     ctx.strokeStyle = "#f59e0b";
@@ -1087,39 +1078,33 @@ class SpriteRenderer {
     ctx.textAlign = "center";
     ctx.fillText("☕☕", 0, 5);
 
-    // Chloe's Mom standing nearby ready with her camera!
-    ctx.save();
-    ctx.translate(8, -58);
-    ctx.fillStyle = "#a855f7";
-    this.roundRect(ctx, -10, 0, 20, 14, 5);
-    ctx.fill();
-    ctx.fillStyle = "#fed7aa";
-    ctx.beginPath();
-    ctx.arc(0, -8, 8.5, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.fillStyle = "#78350f";
-    ctx.beginPath();
-    ctx.arc(0, -10, 9, Math.PI, Math.PI * 2);
-    ctx.fill();
-    ctx.font = "16px sans-serif";
-    ctx.fillText("📸", 14, 2);
-
-    // Camera Flash burst during cutscene or periodically
-    if ((state && state.cameraFlash > 0) || Math.sin(time * 4) > 0.92) {
-      ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
-      ctx.beginPath();
-      ctx.arc(14, -2, 22, 0, Math.PI * 2);
+    // Chloe's Mom appears when Jana reaches the bench!
+    if (state && state.isCutscene) {
+      ctx.save();
+      ctx.translate(8, -58);
+      ctx.fillStyle = "#a855f7";
+      this.roundRect(ctx, -10, 0, 20, 14, 5);
       ctx.fill();
+      ctx.fillStyle = "#fed7aa";
+      ctx.beginPath();
+      ctx.arc(0, -8, 8.5, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = "#78350f";
+      ctx.beginPath();
+      ctx.arc(0, -10, 9, Math.PI, Math.PI * 2);
+      ctx.fill();
+      ctx.font = "16px sans-serif";
+      ctx.fillText("📸", 14, 2);
+
+      if (state.cameraFlash > 0) {
+        ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+        ctx.beginPath();
+        ctx.arc(14, -2, 22, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
     }
 
-    ctx.font = "bold 10px 'Nunito', sans-serif";
-    ctx.fillStyle = "#fef08a";
-    ctx.fillText("Chloe's Mom", 0, -24);
-    ctx.restore();
-
-    ctx.font = "bold 11px 'Nunito', sans-serif";
-    ctx.fillStyle = "#0f172a";
-    ctx.fillText("HOT COCOA BENCH", 0, 36);
     ctx.restore();
   }
 
@@ -1146,10 +1131,7 @@ class SpriteRenderer {
 
     ctx.font = "28px sans-serif";
     ctx.textAlign = "center";
-    ctx.fillText("👑", 0, -2);
-    ctx.font = "bold 10px 'Nunito', sans-serif";
-    ctx.fillStyle = "#fef08a";
-    ctx.fillText("ROYAL COURT", 0, 20);
+    ctx.fillText("👑", 0, 6);
     ctx.restore();
   }
 
@@ -1180,7 +1162,7 @@ class SpriteRenderer {
     ctx.closePath();
     ctx.fill();
 
-    // TV inside showing Reindeer Racing + Fondue Pot!
+    // Warm glowing lodge window
     ctx.fillStyle = "#0ea5e9";
     ctx.fillRect(-24, -18, 48, 22);
     const deerOffset = (time * 18) % 26;
@@ -1189,11 +1171,7 @@ class SpriteRenderer {
     ctx.fillText("🦌🦌", -8 + deerOffset * 0.5, -3);
 
     ctx.font = "18px sans-serif";
-    ctx.fillText("🫕🍓", 0, 20);
-
-    ctx.font = "bold 10px 'Nunito', sans-serif";
-    ctx.fillStyle = "#7c2d12";
-    ctx.fillText("SKI LODGE FONDUE", 0, 44);
+    ctx.fillText("🫕", 0, 20);
     ctx.restore();
   }
 
@@ -1216,11 +1194,6 @@ class SpriteRenderer {
     ctx.closePath();
     ctx.fill();
     ctx.stroke();
-
-    ctx.fillStyle = "#fde047";
-    ctx.font = "bold 10px 'Nunito', sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("COP SLIDE", -8, -62);
     ctx.restore();
   }
 
@@ -1259,10 +1232,6 @@ class SpriteRenderer {
     ctx.font = "18px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("🕯️🍝🥂", 0, 10);
-
-    ctx.font = "bold 11px 'Nunito', sans-serif";
-    ctx.fillStyle = "#fef08a";
-    ctx.fillText("DINNER W/ JULIA", 0, 44);
     ctx.restore();
   }
 

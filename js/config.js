@@ -4,11 +4,14 @@
  * ============================================================================
  * Edit this file to personalize names, outfits, real photo paths, memory
  * captions, and the final anniversary message & gift reveal!
+ *
+ * NOTE: Level titles, goals, and future chapters are intentionally kept
+ * hidden during gameplay so every stage & ending is a surprise for the player!
  */
 
 window.GAME_CONFIG = {
   title: "Our Journey Together",
-  subtitle: "A 4-Level Interactive Anniversary Adventure",
+  subtitle: "A Mystery Interactive Adventure",
   coupleNames: "Jana & Logan",
 
   // Main Player Profile (Jana: small girl with black hair and brown eyes)
@@ -64,110 +67,82 @@ window.GAME_CONFIG = {
     }
   },
 
-  // Level 1 Polaroid Photos (Taken by Chloe's Mom at the Hot Cocoa Bench!)
+  // Level 1 Polaroid Photos (Taken by Chloe's Mom when Jana reaches the bench!)
   // Drop your real photos into assets/photos/ and set imageSrc below.
   // If an image file is missing, the game automatically renders a keepsake illustration!
   level1Photos: [
     {
       imageSrc: "assets/photos/first_date_1.jpg",
-      caption: "Skating hand-in-hand under the twinkling rink lights",
-      dateTag: "The First Date",
+      caption: "Skating hand-in-hand under the twinkling lights",
+      dateTag: "Memory I",
       sceneType: "rink_hug"
     },
     {
       imageSrc: "assets/photos/first_date_2.jpg",
-      caption: "Warming up at the Hot Cocoa Bench (Photo credit: Chloe's Mom!)",
-      dateTag: "Hot Cocoa Break",
+      caption: "Warming up with hot cocoa (Photo credit: Chloe's Mom!)",
+      dateTag: "Memory II",
       sceneType: "cocoa_bench"
     },
     {
       imageSrc: "assets/photos/first_date_3.jpg",
       caption: "Big smiles, rosy cheeks, and the beginning of our adventure",
-      dateTag: "Where It All Began",
+      dateTag: "Memory III",
       sceneType: "snowy_selfie"
     }
   ],
 
-  // 4-Level Definitions & Story Moments
+  // 4-Level Physics & Post-Level Reveal Definitions (Hidden until completed!)
   levels: [
     {
       id: 1,
-      number: "Level 1",
-      title: "The First Date — Ice Skating Rink",
-      subtitle: "Navigate the crowded rink to reach the cozy Hot Cocoa Bench!",
-      badge: "Winter Wonderland",
-      powerUpName: "Hand-in-Hand Shield",
-      powerUpIcon: "🤝",
-      powerUpHint: "Collect 2 Snowflakes + Press SPACE (or touch your Partner Token) to hold hands & glide past wobbly skaters!",
-      collectibleName: "Snowflake Tokens",
+      number: "Stage I",
+      powerUpIcon: "✨",
       collectibleIcon: "❄️",
-      goalName: "Hot Cocoa Bench",
       physics: {
         frictionAir: 0.016,     // Low ice friction for authentic skating inertia
         accel: 0.42,
         maxSpeed: 5.6,
         continuousForward: 0
       },
-      completionHeadline: "Chloe's Mom Snapped Our Photos! 📸",
-      completionStory: "You made it across the ice rink to the cozy Hot Cocoa Bench! Right on cue, Chloe's mom appeared with her camera to capture the sweetest moments from our very first chapter.",
-      nextButtonText: "Travel to Level 2: Renaissance Faire 🏰"
+      completionHeadline: "Surprise! Chloe's Mom Snapped Our Photos! 📸",
+      completionStory: "You made it across the ice rink to the Hot Cocoa Bench—and right on cue, Chloe's mom popped out with her camera to capture the sweetest moments!",
+      nextButtonText: "Continue to Next Stage ➡️"
     },
     {
       id: 2,
-      number: "Level 2",
-      title: "The Outdoor Adventure — Renaissance Faire",
-      subtitle: "Journey through the medieval festival to reach the Royal Court Stage!",
-      badge: "Huzzah! Medieval Festival",
-      powerUpName: "Warlock's Knightly Valor",
-      powerUpIcon: "🍗",
-      powerUpHint: "Collect 2 Faire Favors + Press SPACE (or grab a Turkey Leg / Royal Mead) to summon the Black-Caped Warlock's obstacle-banishing spell!",
-      collectibleName: "Bard Favors & Flower Crowns",
+      number: "Stage II",
+      powerUpIcon: "✨",
       collectibleIcon: "🌸",
-      goalName: "Royal Court Stage",
       physics: {
-        frictionAir: 0.055,     // Earthy cobblestone & meadow footing
+        frictionAir: 0.055,     // Earthy festival footing
         accel: 0.56,
         maxSpeed: 5.4,
         continuousForward: 0
       },
       completionHeadline: "The King's Royal Blessing! 👑",
-      completionStory: "With flower crowns braided, bard lutes strumming, and a black-caped warlock clearing the way with arcane magic, you stood before the Royal Court and received the King's blessing!",
-      nextButtonText: "Head to Level 3: Winter Ski Trip ⛷️"
+      completionStory: "With flower crowns braided, bard lutes strumming, and a black-caped warlock clearing the way with arcane magic, you reached the Royal Court and received the King's blessing!",
+      nextButtonText: "Continue to Next Stage ➡️"
     },
     {
       id: 3,
-      number: "Level 3",
-      title: "The Winter Getaway — Ski Trip",
-      subtitle: "Slalom down the snowy mountain & gather fondue ingredients before the Ski Lodge!",
-      badge: "Alpine Slalom",
-      powerUpName: "Hot Cocoa Thermal Boost",
-      powerUpIcon: "☕",
-      powerUpHint: "Collect 2 Fondue Treats + Press SPACE (or grab a Hot Cocoa Mug) for a warming speed burst that glides right over icy spin-out patches!",
-      collectibleName: "Fondue Ingredients",
+      number: "Stage III",
+      powerUpIcon: "✨",
       collectibleIcon: "🍓",
-      goalName: "Warm Ski Lodge",
       physics: {
         frictionAir: 0.024,     // Carving down fresh alpine powder
         accel: 0.48,
         maxSpeed: 6.2,
-        continuousForward: 0.11 // Gentle downhill gravity slope pull
+        continuousForward: 0.11 // Gentle downhill slope pull
       },
       completionHeadline: "Fondue Night & Reindeer Racing! 🍫🦌",
       completionStory: "You carved down the mountain into the warm Ski Lodge! Inside, the strawberries, bananas, and marshmallows are dipping into bubbling melted chocolate while the reindeers race neck-and-neck on the lodge TV!",
-      nextButtonText: "Launch into Level 4: Boston Promenade 🛝"
+      nextButtonText: "Continue to Final Stage ➡️"
     },
     {
       id: 4,
-      number: "Level 4",
-      title: "The Grand Celebration — Boston Promenade",
-      subtitle: "Launch down the Cop Slide and keep your momentum past Fenway, Salem & the Freedom Trail to meet Julia for dinner!",
-      badge: "Boston High-Speed Run",
-      powerUpName: "Tatte Latte Espresso Rush",
-      powerUpIcon: "🧋",
-      powerUpHint: "Continuous Cop Slide momentum active! Collect 2 Hearts/Balloons + Press SPACE (or grab a Tatte Latte) to zoom past Salem Witches & exploding Sprites!",
-      collectibleName: "Gold Hearts & Balloons",
-      collectibleIcon: "🎈",
-      goalName: "Dinner with Julia",
+      number: "Stage IV",
+      powerUpIcon: "✨",
+      collectibleIcon: "💛",
       physics: {
         frictionAir: 0.022,
         accel: 0.52,
@@ -175,12 +150,12 @@ window.GAME_CONFIG = {
         continuousForward: 0.23 // High-speed Cop Slide continuous forward momentum!
       },
       completionHeadline: "Dinner with Julia in Boston! 🥂✨",
-      completionStory: "After flying down the iconic Cop Slide, dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you made it to dinner with Julia to celebrate!",
-      nextButtonText: "Unlock Your Anniversary Surprise 💝"
+      completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you made it to dinner with Julia!",
+      nextButtonText: "See What's Waiting... 💝"
     }
   ],
 
-  // Final Victory Screen & Gift Reveal Customization
+  // Final Victory Screen & Gift Reveal Customization (Only shown after beating all 4 stages)
   finale: {
     headline: "Happy Anniversary, Jana! 💖",
     subheadline: "Every level of life is better because I get to play it hand-in-hand with you.",
@@ -190,7 +165,7 @@ window.GAME_CONFIG = {
     ],
     signature: "With all my love, always ❤️",
     giftReveal: {
-      buttonPrompt: "🎁 Click to Unwrap Your Anniversary Gift Reveal",
+      buttonPrompt: "🎁 Click to Unwrap Your Surprise",
       title: "Your Anniversary Surprise Awaits!",
       subtitle: "Pack your bags & get ready for our next chapter together...",
       details: "✨ Special Anniversary Dinner & Weekend Getaway Pass ✨\nRedeemable anytime for cozy hot cocoa, Tatte lattes, fondue for two, and a brand new adventure of your choice!",

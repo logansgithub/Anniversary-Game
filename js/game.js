@@ -190,18 +190,9 @@ class AnniversaryGame {
     if (muteBtn) {
       muteBtn.addEventListener("click", () => {
         const isMuted = window.soundManager.toggleMute();
-        muteBtn.textContent = isMuted ? "🔇 Audio Off" : "🔊 Audio On";
+        muteBtn.textContent = isMuted ? "🔇 Muted" : "🔊 Audio";
       });
     }
-
-    // Level jump pills in header
-    document.querySelectorAll(".level-pill").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const idx = parseInt(btn.getAttribute("data-level-index"), 10);
-        window.soundManager.init();
-        this.startLevel(idx);
-      });
-    });
   }
 
   startLevel(levelIndex) {
@@ -249,7 +240,7 @@ class AnniversaryGame {
     }
 
     if (levelCfg.id === 4) {
-      this.addFloatingText(this.player.x + 70, this.player.y - 35, "🛝 WEEEE! COP SLIDE LAUNCH!", "#fde047");
+      this.addFloatingText(this.player.x + 70, this.player.y - 35, "🛝 WEEEE!", "#fde047");
     }
 
     // Hide overlays
@@ -663,10 +654,10 @@ class AnniversaryGame {
           this.powerCharges = Math.min(this.maxPowerCharges, this.powerCharges + 1);
           if (this.powerCharges >= this.maxPowerCharges) {
             window.soundManager.playPowerUpReady();
-            this.addFloatingText(item.x, item.y - 18, "⚡ SPACEBAR POWER-UP READY!", "#fde047");
+            this.addFloatingText(item.x, item.y - 18, "⚡ PRESS SPACE!", "#fde047");
           } else {
             window.soundManager.playCollectible();
-            this.addFloatingText(item.x, item.y - 14, `${item.icon} ${item.label}`, "#fef08a");
+            this.addFloatingText(item.x, item.y - 14, `+${item.points || 100}`, "#fef08a");
           }
         }
       }
@@ -902,44 +893,41 @@ class AnniversaryGame {
     const levelCfg = this.config.levels[this.currentLevelIndex];
     if (!levelCfg) return;
 
-    document.getElementById("hudLevelNumber").textContent = levelCfg.number;
-    document.getElementById("hudLevelTitle").textContent = levelCfg.title;
-    document.getElementById("hudObjective").textContent = levelCfg.subtitle;
-    document.getElementById("hudScore").textContent = this.score;
-    document.getElementById("hudPowerHint").textContent = levelCfg.powerUpHint;
+    const stageBadge = document.getElementById("hudStageBadge");
+    if (stageBadge) stageBadge.textContent = levelCfg.number;
 
-    // Highlight active level pill
-    document.querySelectorAll(".level-pill").forEach((pill, idx) => {
-      pill.classList.toggle("active", idx === this.currentLevelIndex);
+    const scoreEl = document.getElementById("hudScore");
+    if (scoreEl) scoreEl.textContent = this.score;
+
+    // Highlight mystery stage progress dots
+    document.querySelectorAll(".stage-dot").forEach((dot, idx) => {
+      dot.classList.toggle("active", idx === this.currentLevelIndex);
+      dot.classList.toggle("completed", idx < this.currentLevelIndex);
     });
 
-    // Update Power-Up Charge Meter & Button
+    // Update Power-Up Charge Meter & Button (No spoilers!)
     const powerBtn = document.getElementById("powerUpTriggerBtn");
-    const timerText = document.getElementById("hudPowerTimer");
-
-    if (this.powerUpTimer > 0) {
-      powerBtn.classList.add("active-aura");
-      powerBtn.classList.remove("ready-pulse");
-      powerBtn.textContent = `${levelCfg.powerUpIcon} ${levelCfg.powerUpName}: ${this.powerUpTimer.toFixed(1)}s`;
-      timerText.textContent = `ACTIVE (${this.powerUpTimer.toFixed(1)}s)`;
-    } else if (this.powerCharges >= this.maxPowerCharges) {
-      powerBtn.classList.remove("active-aura");
-      powerBtn.classList.add("ready-pulse");
-      powerBtn.textContent = `${levelCfg.powerUpIcon} PRESS SPACE: ${levelCfg.powerUpName}!`;
-      timerText.textContent = "READY! Press SPACE";
-    } else {
-      powerBtn.classList.remove("active-aura", "ready-pulse");
-      powerBtn.textContent = `${levelCfg.collectibleIcon} Charges: ${this.powerCharges} / ${this.maxPowerCharges}`;
-      timerText.textContent = `Collect ${this.maxPowerCharges - this.powerCharges} more`;
+    if (powerBtn) {
+      if (this.powerUpTimer > 0) {
+        powerBtn.classList.add("active-aura");
+        powerBtn.classList.remove("ready-pulse");
+        powerBtn.textContent = `✨ ${this.powerUpTimer.toFixed(1)}s`;
+      } else if (this.powerCharges >= this.maxPowerCharges) {
+        powerBtn.classList.remove("active-aura");
+        powerBtn.classList.add("ready-pulse");
+        powerBtn.textContent = `⚡ READY [SPACE]`;
+      } else {
+        powerBtn.classList.remove("active-aura", "ready-pulse");
+        powerBtn.textContent = `⚡ ${this.powerCharges} / ${this.maxPowerCharges}`;
+      }
     }
 
-    // Level 3 Fondue Checklist Badge
+    // Level 3 Subtle Ingredient Icons (no text spoilers)
     const fondueBadge = document.getElementById("fondueHudTracker");
     if (fondueBadge) {
       if (levelCfg.id === 3) {
         fondueBadge.classList.remove("hidden");
         fondueBadge.innerHTML = `
-          <span>Fondue Pot:</span>
           <span class="${this.fondueCollected.strawberry ? "got" : "need"}">🍓</span>
           <span class="${this.fondueCollected.banana ? "got" : "need"}">🍌</span>
           <span class="${this.fondueCollected.marshmallow ? "got" : "need"}">🍡</span>
@@ -960,7 +948,8 @@ class AnniversaryGame {
 
     // 1. Draw Themed Environment & Goal Landmark
     this.sprites.drawEnvironment(ctx, this.width, this.height, levelId, this.time, {
-      cameraFlash: this.cameraFlash
+      cameraFlash: this.cameraFlash,
+      isCutscene: this.state === "CUTSCENE"
     });
 
     // 2. Draw Collectibles & Power-Up Tokens
