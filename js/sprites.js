@@ -1590,56 +1590,125 @@ class SpriteRenderer {
       }
 
     } else {
-      // STAGE 4: Seamless Side-Scrolling Boston Promenade
-      const cityGrad = tctx.createLinearGradient(0, 0, 0, height);
-      cityGrad.addColorStop(0, "#1e1b4b");
-      cityGrad.addColorStop(0.23, "#312e81");
-      cityGrad.addColorStop(0.24, "#334155");
-      cityGrad.addColorStop(1, "#1e293b");
-      tctx.fillStyle = cityGrad;
-      tctx.fillRect(0, 0, width, height);
+      // STAGE 4: Seamless Side-Scrolling DAYTIME AUTUMN BOSTON PROMENADE
+      // 1. Crisp Daytime Blue Sky & Sunlit Promenade Ground
+      const skyGrad = tctx.createLinearGradient(0, 0, 0, 120);
+      skyGrad.addColorStop(0, "#0284c7");
+      skyGrad.addColorStop(0.55, "#38bdf8");
+      skyGrad.addColorStop(1, "#bae6fd");
+      tctx.fillStyle = skyGrad;
+      tctx.fillRect(0, 0, width, 120);
 
-      // Seamless Red-Brick Freedom Trail running horizontally (same Y at x=0 and x=960)
-      tctx.strokeStyle = "#dc2626";
-      tctx.lineWidth = 10;
-      tctx.setLineDash([18, 6]);
+      // Soft Fluffy White Daytime Clouds
+      tctx.fillStyle = "rgba(255, 255, 255, 0.88)";
+      [110, 390, 680, 890].forEach((cx, idx) => {
+        const cy = 22 + (idx % 2) * 10;
+        tctx.beginPath();
+        tctx.arc(cx, cy, 14, 0, Math.PI * 2);
+        tctx.arc(cx + 14, cy - 4, 17, 0, Math.PI * 2);
+        tctx.arc(cx + 30, cy, 13, 0, Math.PI * 2);
+        tctx.fill();
+      });
+
+      // 2. Iconic Boston Skyline Landmarks along the Horizon (y = 118)
+      // A. Back Bay / Beacon Hill Red-Brick Brownstone Rowhouses (Left & Right clusters)
+      this.drawBostonBrickRowhouses(tctx, 18, 118, 4);
+      this.drawBostonBrickRowhouses(tctx, 735, 118, 4);
+
+      // B. Fenway Park "Green Monster" Scoreboard Wall
+      tctx.fillStyle = "#15803d";
+      tctx.strokeStyle = "#dcfce7";
+      tctx.lineWidth = 2;
+      tctx.fillRect(245, 42, 145, 76);
+      tctx.strokeRect(245, 42, 145, 76);
+      tctx.fillStyle = "#fde047";
+      tctx.font = "bold 11px monospace";
+      tctx.textAlign = "center";
+      tctx.fillText("BOS  9  |  NY  2", 317, 82);
+
+      // C. The Iconic MIT Great Dome (Building 10 Neoclassical Colonnade & Dome)
+      this.drawMITGreatDome(tctx, 495, 118);
+
+      // D. Historic Salem Gabled Timber House
+      tctx.fillStyle = "#44403c";
+      tctx.strokeStyle = "#292524";
+      tctx.lineWidth = 1.5;
+      tctx.beginPath();
+      tctx.moveTo(615, 118);
+      tctx.lineTo(615, 72);
+      tctx.lineTo(645, 40);
+      tctx.lineTo(675, 72);
+      tctx.lineTo(700, 46);
+      tctx.lineTo(725, 72);
+      tctx.lineTo(725, 118);
+      tctx.closePath();
+      tctx.fill();
+      tctx.stroke();
+      // Diamond-pane windows on Salem house
+      tctx.fillStyle = "#fef08a";
+      tctx.fillRect(637, 74, 14, 16);
+      tctx.fillRect(692, 76, 14, 14);
+
+      // 3. Daytime Sunlit Boston Stone & Brick Promenade Floor
+      const pathGrad = tctx.createLinearGradient(0, 118, 0, height);
+      pathGrad.addColorStop(0, "#d6d3d1");
+      pathGrad.addColorStop(0.12, "#e7e5e4");
+      pathGrad.addColorStop(0.88, "#d6d3d1");
+      pathGrad.addColorStop(1, "#a8a29e");
+      tctx.fillStyle = pathGrad;
+      tctx.fillRect(0, 118, width, height - 118);
+
+      // Brick sidewalk curbstones along top & bottom of promenade
+      tctx.fillStyle = "#991b1b";
+      tctx.fillRect(0, 116, width, 8);
+      tctx.fillRect(0, height - 28, width, 8);
+      tctx.strokeStyle = "rgba(254, 226, 226, 0.55)";
+      tctx.lineWidth = 1.5;
+      for (let bx = 0; bx < width; bx += 24) {
+        tctx.strokeRect(bx, 116, 24, 8);
+        tctx.strokeRect(bx, height - 28, 24, 8);
+      }
+
+      // Subtle Stone Paver Grid Lines on the Promenade
+      tctx.strokeStyle = "rgba(120, 113, 108, 0.2)";
+      tctx.lineWidth = 1;
+      for (let py = 160; py < height - 40; py += 45) {
+        tctx.beginPath();
+        tctx.moveTo(0, py);
+        tctx.lineTo(width, py);
+        tctx.stroke();
+      }
+
+      // 4. Seamless Red-Brick FREEDOM TRAIL winding horizontally (same Y at x=0 and x=960)
+      tctx.strokeStyle = "#b91c1c";
+      tctx.lineWidth = 12;
+      tctx.beginPath();
+      tctx.moveTo(0, height * 0.56);
+      tctx.bezierCurveTo(width * 0.33, height * 0.38, width * 0.66, height * 0.74, width, height * 0.56);
+      tctx.stroke();
+
+      tctx.strokeStyle = "#ef4444";
+      tctx.lineWidth = 8;
+      tctx.setLineDash([16, 6]);
       tctx.beginPath();
       tctx.moveTo(0, height * 0.56);
       tctx.bezierCurveTo(width * 0.33, height * 0.38, width * 0.66, height * 0.74, width, height * 0.56);
       tctx.stroke();
       tctx.setLineDash([]);
 
-      // Boston Skyline Landmarks repeating across the scrolling backdrop:
-      // Fenway Green Monster wall
-      tctx.fillStyle = "#14532d";
-      tctx.strokeStyle = "#dcfce7";
-      tctx.lineWidth = 2;
-      tctx.fillRect(140, 32, 165, 78);
-      tctx.strokeRect(140, 32, 165, 78);
-      tctx.fillStyle = "#fde047";
-      tctx.font = "bold 11px monospace";
-      tctx.textAlign = "center";
-      tctx.fillText("BOS  9  |  NY  2", 222, 74);
-
-      // Salem Timber Gables
-      tctx.fillStyle = "#27272a";
-      tctx.beginPath();
-      tctx.moveTo(410, 110);
-      tctx.lineTo(410, 62);
-      tctx.lineTo(445, 28);
-      tctx.lineTo(480, 62);
-      tctx.lineTo(515, 32);
-      tctx.lineTo(550, 62);
-      tctx.lineTo(550, 110);
-      tctx.closePath();
-      tctx.fill();
-
-      // Museum of Fine Arts Classical Columns
-      tctx.fillStyle = "#e2e8f0";
-      tctx.fillRect(670, 42, 145, 68);
-      tctx.fillStyle = "#94a3b8";
-      for (let c = 0; c < 4; c++) {
-        tctx.fillRect(685 + c * 34, 58, 10, 52);
+      // 5. Vibrant New England Autumn Trees & Scattered Fall Leaves along Top & Bottom Borders
+      const autumnPalettes = [
+        ["#dc2626", "#ea580c", "#facc15"], // Crimson & Gold
+        ["#ea580c", "#f59e0b", "#fde047"], // Burnt Orange & Amber
+        ["#b91c1c", "#dc2626", "#fb923c"], // Deep Scarlet Maple
+        ["#d97706", "#facc15", "#fef08a"]  // Golden Birch
+      ];
+      for (let i = 0; i < 8; i++) {
+        const tx = 60 + i * 120;
+        const palTop = autumnPalettes[i % autumnPalettes.length];
+        const palBot = autumnPalettes[(i + 2) % autumnPalettes.length];
+        this.drawAutumnTree(tctx, tx, 122, palTop);
+        this.drawAutumnTree(tctx, tx, height - 18, palBot);
       }
     }
 
@@ -2095,6 +2164,163 @@ class SpriteRenderer {
     ctx.restore();
   }
 
+  /**
+   * Draws a cluster of iconic Boston Red-Brick Rowhouses (Back Bay / Beacon Hill style)
+   * with white stone lintels, bay windows, slate mansard roofs, and chimneys.
+   */
+  drawBostonBrickRowhouses(ctx, startX, groundY, count = 4) {
+    const brickShades = ["#991b1b", "#b91c1c", "#7f1d1d", "#a21caf"];
+    const houseW = 52;
+    for (let i = 0; i < count; i++) {
+      const hx = startX + i * houseW;
+      const hh = 68 + (i % 2) * 10;
+      const hy = groundY - hh;
+
+      // Red-brick facade
+      ctx.fillStyle = i === 3 ? "#881337" : brickShades[i % 3];
+      ctx.fillRect(hx, hy, houseW, hh);
+
+      // Slate Mansard Roof & Cornice
+      ctx.fillStyle = "#334155";
+      ctx.beginPath();
+      ctx.moveTo(hx - 2, hy);
+      ctx.lineTo(hx + 5, hy - 12);
+      ctx.lineTo(hx + houseW - 5, hy - 12);
+      ctx.lineTo(hx + houseW + 2, hy);
+      ctx.closePath();
+      ctx.fill();
+
+      // Brick Chimney
+      ctx.fillStyle = "#7f1d1d";
+      ctx.fillRect(hx + 10, hy - 20, 8, 9);
+
+      // White Sandstone Cornice Trim
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(hx - 1, hy - 2, houseW + 2, 3.5);
+
+      // 2x3 Grid of Classic White-Trimmed Sash Windows
+      for (let row = 0; row < 2; row++) {
+        for (let col = 0; col < 2; col++) {
+          const wx = hx + 9 + col * 20;
+          const wy = hy + 10 + row * 22;
+          // Sandstone lintel
+          ctx.fillStyle = "#e2e8f0";
+          ctx.fillRect(wx - 1.5, wy - 2, 13, 2.5);
+          // Window pane
+          ctx.fillStyle = "#1e293b";
+          ctx.strokeStyle = "#f8fafc";
+          ctx.lineWidth = 1.2;
+          ctx.fillRect(wx, wy, 10, 14);
+          ctx.strokeRect(wx, wy, 10, 14);
+        }
+      }
+
+      // Arched Front Stoop Doorway
+      ctx.fillStyle = "#f8fafc";
+      ctx.fillRect(hx + 30, groundY - 18, 12, 18);
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(hx + 32, groundY - 16, 8, 16);
+    }
+  }
+
+  /**
+   * Draws the iconic MIT Great Dome (Building 10 / Killian Court)
+   * with its limestone ionic colonnade, stepped drum, and hemispherical dome.
+   */
+  drawMITGreatDome(ctx, centerX, groundY) {
+    ctx.save();
+    ctx.translate(centerX, groundY);
+
+    // Hemispherical Limestone Dome
+    const domeGrad = ctx.createLinearGradient(-48, -98, 48, -55);
+    domeGrad.addColorStop(0, "#f8fafc");
+    domeGrad.addColorStop(0.5, "#e2e8f0");
+    domeGrad.addColorStop(1, "#94a3b8");
+    ctx.fillStyle = domeGrad;
+    ctx.strokeStyle = "#cbd5e1";
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(0, -54, 42, Math.PI, Math.PI * 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+
+    // Stepped Drum beneath the Dome
+    ctx.fillStyle = "#e2e8f0";
+    ctx.fillRect(-48, -56, 96, 10);
+    ctx.fillStyle = "#cbd5e1";
+    ctx.fillRect(-54, -46, 108, 8);
+
+    // Neoclassical Portico Entablature ("MASSACHUSETTS INSTITUTE OF TECHNOLOGY" frieze)
+    ctx.fillStyle = "#f1f5f9";
+    ctx.strokeStyle = "#94a3b8";
+    ctx.lineWidth = 1.2;
+    ctx.fillRect(-68, -40, 136, 40);
+    ctx.strokeRect(-68, -40, 136, 40);
+
+    // Classical Limestone Columns across the facade
+    ctx.fillStyle = "#cbd5e1";
+    for (let c = -3; c <= 3; c++) {
+      ctx.fillRect(c * 17 - 3.5, -32, 7, 32);
+    }
+
+    // Frieze band line
+    ctx.fillStyle = "#64748b";
+    ctx.font = "bold 7px serif";
+    ctx.textAlign = "center";
+    ctx.fillText("M · I · T", 0, -34);
+
+    ctx.restore();
+  }
+
+  /**
+   * Draws a New England Autumn Tree bursting with red, orange, and gold foliage,
+   * plus scattered fallen autumn leaves around the trunk.
+   */
+  drawAutumnTree(ctx, x, y, palette = ["#dc2626", "#ea580c", "#facc15"]) {
+    ctx.save();
+    ctx.translate(x, y);
+
+    // Scattered fallen autumn leaves on the ground around trunk
+    const leafPositions = [
+      { lx: -14, ly: 2, c: palette[0] },
+      { lx: -6, ly: 5, c: palette[2] },
+      { lx: 8, ly: 4, c: palette[1] },
+      { lx: 15, ly: 1, c: palette[0] }
+    ];
+    leafPositions.forEach(lp => {
+      ctx.fillStyle = lp.c;
+      ctx.beginPath();
+      ctx.ellipse(lp.lx, lp.ly, 3, 1.6, 0.3, 0, Math.PI * 2);
+      ctx.fill();
+    });
+
+    // Sturdy Wood Trunk & Branches
+    ctx.fillStyle = "#5c3824";
+    ctx.fillRect(-3.5, -16, 7, 18);
+
+    // Multi-layered Autumn Leaf Canopy Clusters
+    ctx.fillStyle = palette[0];
+    ctx.beginPath();
+    ctx.arc(-10, -22, 11, 0, Math.PI * 2);
+    ctx.arc(10, -21, 11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = palette[1];
+    ctx.beginPath();
+    ctx.arc(0, -28, 13, 0, Math.PI * 2);
+    ctx.arc(-6, -18, 9, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = palette[2];
+    ctx.beginPath();
+    ctx.arc(5, -24, 9.5, 0, Math.PI * 2);
+    ctx.arc(-3, -31, 7.5, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+  }
+
   drawPineTree(ctx, x, y) {
     ctx.save();
     ctx.translate(x, y);
@@ -2142,9 +2368,10 @@ class SpriteRenderer {
       grad.addColorStop(0.52, "#f8fafc");
       grad.addColorStop(1, "#e0f2fe");
     } else {
-      grad.addColorStop(0, "#1e1b4b");
-      grad.addColorStop(0.55, "#312e81");
-      grad.addColorStop(1, "#4c1d95");
+      grad.addColorStop(0, "#38bdf8");
+      grad.addColorStop(0.5, "#bae6fd");
+      grad.addColorStop(0.52, "#b91c1c");
+      grad.addColorStop(1, "#e7e5e4");
     }
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, w, h);
