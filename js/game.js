@@ -449,15 +449,17 @@ class AnniversaryGame {
   }
 
   /**
-   * Triggers a 1.45-second pressurized Sprite Can explosion animation on Level 4
-   * before showing the Game Over screen!
+   * Triggers the pressurized Sprite Can explosion animation on every Sprite can collision!
+   * When isFatal is true (3rd hit), it transitions to Game Over once the blast finishes.
    */
-  triggerSpriteCanExplosion(x, y) {
-    this.state = "SPRITE_EXPLODING";
+  triggerSpriteCanExplosion(x, y, isFatal = false) {
+    if (isFatal) {
+      this.state = "SPRITE_EXPLODING";
+      this.player.vx = 0;
+      this.player.vy = 0;
+    }
     window.soundManager.playFizzPop();
-    this.player.slipTimer = 1.45;
-    this.player.vx = 0;
-    this.player.vy = 0;
+    this.player.slipTimer = isFatal ? 1.45 : 0.9;
 
     // Generate radial fizzy soda droplets & spinning green/silver aluminum can shards
     const droplets = [];
@@ -482,6 +484,7 @@ class AnniversaryGame {
       duration: 1.45,
       progress: 0,
       burstTriggered: false,
+      isFatal,
       droplets
     };
 
@@ -490,7 +493,7 @@ class AnniversaryGame {
 
   updateSpriteExplosion(dt) {
     if (!this.spriteExplosion) {
-      this.triggerGameOver();
+      if (this.state === "SPRITE_EXPLODING") this.triggerGameOver();
       return;
     }
 
@@ -522,13 +525,21 @@ class AnniversaryGame {
       const dirX = this.player.x <= this.spriteExplosion.x ? -1 : 1;
       this.player.x = Math.max(40, Math.min(this.width - 40, this.player.x + dirX * 95 * dt));
       this.player.spinAngle += dt * 14;
+    } else if (this.spriteExplosion.progress >= 0.65) {
+      this.player.spinAngle = 0;
     }
 
-    this.updateParticles(dt);
+    if (this.state === "SPRITE_EXPLODING") {
+      this.updateParticles(dt);
+    }
 
     if (this.spriteExplosion.timer <= 0) {
+      const wasFatal = this.spriteExplosion.isFatal;
+      this.spriteExplosion = null;
       this.player.spinAngle = 0;
-      this.triggerGameOver();
+      if (wasFatal) {
+        this.triggerGameOver();
+      }
     }
   }
 
@@ -663,6 +674,9 @@ class AnniversaryGame {
 
     if (this.warlockShockwave > 0) {
       this.warlockShockwave = Math.max(0, this.warlockShockwave - dt * 1.4);
+    }
+    if (this.spriteExplosion) {
+      this.updateSpriteExplosion(dt);
     }
     if (this.hitGraceTimer > 0) {
       this.hitGraceTimer = Math.max(0, this.hitGraceTimer - dt);
@@ -837,8 +851,12 @@ class AnniversaryGame {
         if (this.isInvincible || (this.godMode && this.godInvincible)) {
           // Power-Up Shield or God Mode Invincibility Active: Safely knock obstacle away!
           this.score += 50;
-          for (let p = 0; p < 6; p++) {
-            this.spawnParticle(obs.x, obs.y, "💖");
+          if (obs.subType === "sprite_can") {
+            this.triggerSpriteCanExplosion(obs.x, obs.y, false);
+          } else {
+            for (let p = 0; p < 6; p++) {
+              this.spawnParticle(obs.x, obs.y, "💖");
+            }
           }
           this.obstacles.splice(i, 1);
           continue;
@@ -860,15 +878,13 @@ class AnniversaryGame {
             const heartsLeft = (this.maxHitsAllowed + 1) - this.hitsTaken;
 
             if (isSpriteCan) {
-              window.soundManager.playFizzPop();
-              for (let p = 0; p < 8; p++) {
-                this.spawnParticle(exX, exY, p % 2 === 0 ? "🫧" : "🍋");
-              }
+              // Full Sprite Boom Explosion on every Sprite can collision!
+              this.triggerSpriteCanExplosion(exX, exY, false);
               this.addFloatingText(
                 this.player.x,
-                this.player.y - 44,
-                `🥫 Fizzy Hit! (${heartsLeft} ❤️ left)`,
-                "#4ade80"
+                this.player.y - 48,
+                `💔 (${heartsLeft} ❤️ left)`,
+                "#fda4af"
               );
             } else {
               window.soundManager.playBump();
@@ -885,7 +901,7 @@ class AnniversaryGame {
 
           // 3rd hit (all 2 extra chances used up) -> Explode Sprite Can or Trigger Game Over!
           if (isSpriteCan) {
-            this.triggerSpriteCanExplosion(exX, exY);
+            this.triggerSpriteCanExplosion(exX, exY, true);
             return;
           }
           this.triggerGameOver();
@@ -1310,9 +1326,8 @@ class AnniversaryGame {
     ctx.clearRect(0, 0, this.width, this.height);
 
     ctx.save();
-    // Apply screen shake during the Sprite Can explosion blast wave!
+    // Apply screen shake during any Sprite Can explosion blast wave!
     if (
-      this.state === "SPRITE_EXPLODING" &&
       this.spriteExplosion &&
       this.spriteExplosion.progress >= 0.22 &&
       this.spriteExplosion.progress < 0.75
@@ -1353,8 +1368,8 @@ class AnniversaryGame {
       }
     });
 
-    // 3b. Draw Sprite Can Explosion Animation if active
-    if (this.state === "SPRITE_EXPLODING" && this.spriteExplosion) {
+    // 3b. Draw Sprite Can Explosion Animation whenever active
+    if (this.spriteExplosion) {
       this.sprites.drawSpriteCanExplosion(ctx, this.spriteExplosion, this.time);
     }
 
