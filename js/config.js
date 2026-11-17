@@ -70,8 +70,8 @@ window.GAME_CONFIG = {
   // Finale Photo Highlights (Displayed on the final Victory screen)
   level1Photos: [
     {
-      imageSrc: "assets/photos/level1_photo1.jpg",
-      caption: "Skating hand-in-hand on our first date",
+      imageSrc: "assets/photos/level1_photo2.jpg",
+      caption: "Where it began!",
       dateTag: "Stage I",
       sceneType: "rink_hug",
       levelId: 1
@@ -109,7 +109,7 @@ window.GAME_CONFIG = {
       powerUpIcon: "✨",
       collectibleIcon: "❄️",
       physics: {
-        frictionAir: 0.016,     // Low ice friction for authentic skating inertia
+        frictionAir: 0.006,     // Low ice friction for authentic skating inertia
         accel: 0.42,
         maxSpeed: 5.6,
         continuousForward: 0
@@ -120,21 +120,21 @@ window.GAME_CONFIG = {
       photos: [
         {
           imageSrc: "assets/photos/level1_photo1.jpg",
-          caption: "Skating hand-in-hand at the indoor ice rink",
+          caption: "Our first holiday party together! <3",
           dateTag: "Stage I • Photo 1",
           sceneType: "rink_hug",
           levelId: 1
         },
         {
           imageSrc: "assets/photos/level1_photo2.jpg",
-          caption: "Warming up at the Hot Cocoa Bench (Photo by Chloe's Mom!)",
+          caption: "Back from our first flirt-iversary",
           dateTag: "Stage I • Photo 2",
           sceneType: "cocoa_bench",
           levelId: 1
         },
         {
           imageSrc: "assets/photos/level1_photo3.jpg",
-          caption: "Big smiles and the beginning of our adventure",
+          caption: "Smiles from the early pickleball days",
           dateTag: "Stage I • Photo 3",
           sceneType: "snowy_selfie",
           levelId: 1
@@ -158,21 +158,21 @@ window.GAME_CONFIG = {
       photos: [
         {
           imageSrc: "assets/photos/level2_photo1.jpg",
-          caption: "Wandering the Renaissance Faire grounds together",
+          caption: "Wandering the Renaissance Faire grounds together with the OG Squad",
           dateTag: "Stage II • Photo 1",
           sceneType: "ren_crown",
           levelId: 2
         },
         {
           imageSrc: "assets/photos/level2_photo2.jpg",
-          caption: "Flower crowns, turkey legs, and festival magic",
+          caption: "Festival magic, 2026",
           dateTag: "Stage II • Photo 2",
           sceneType: "ren_warlock",
           levelId: 2
         },
         {
           imageSrc: "assets/photos/level2_photo3.jpg",
-          caption: "Cheering at the Royal Court stage",
+          caption: "Royal Court returns, this time wiht a KBBQ Feast afterwards",
           dateTag: "Stage II • Photo 3",
           sceneType: "ren_court",
           levelId: 2
@@ -196,21 +196,21 @@ window.GAME_CONFIG = {
       photos: [
         {
           imageSrc: "assets/photos/level3_photo1.jpg",
-          caption: "Carving down the snowy mountain slopes",
+          caption: "Carving down the snowy mountain runs. Narrowly avoiding the rain",
           dateTag: "Stage III • Photo 1",
           sceneType: "ski_slope",
           levelId: 3
         },
         {
           imageSrc: "assets/photos/level3_photo2.jpg",
-          caption: "Cozy chocolate fondue with strawberries, bananas & marshmallows",
+          caption: "Best Skiers on the Bunny slope",
           dateTag: "Stage III • Photo 2",
           sceneType: "ski_fondue",
           levelId: 3
         },
         {
           imageSrc: "assets/photos/level3_photo3.jpg",
-          caption: "Warming up in the Ski Lodge watching reindeer races",
+          caption: "The group getting ready to leave the cabin abode",
           dateTag: "Stage III • Photo 3",
           sceneType: "ski_lodge",
           levelId: 3
@@ -229,26 +229,26 @@ window.GAME_CONFIG = {
         continuousForward: 0.23 // High-speed Cop Slide continuous forward momentum!
       },
       completionHeadline: "Level Complete! Dinner with Julia in Boston! 🥂✨",
-      completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the MFA, you crossed the finish line for dinner with Julia!",
+      completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the T, you crossed the finish line for dinner with Julia!",
       nextButtonText: "Next Level ➡️",
       photos: [
         {
           imageSrc: "assets/photos/level4_photo1.jpg",
-          caption: "Exploring Boston, Fenway, Salem & the Cop Slide",
+          caption: "Moments before I teleported from San Diego to Boston",
           dateTag: "Stage IV • Photo 1",
           sceneType: "boston_slide",
           levelId: 4
         },
         {
           imageSrc: "assets/photos/level4_photo2.jpg",
-          caption: "Fueled by Tatte lattes along the Freedom Trail",
+          caption: "Fueled by Tatte lattes to stay awake for our night tour",
           dateTag: "Stage IV • Photo 2",
           sceneType: "boston_tatte",
           levelId: 4
         },
         {
           imageSrc: "assets/photos/level4_photo3.jpg",
-          caption: "Celebrating over dinner in Boston with Julia",
+          caption: "A cute little hat as the perfect final Boston outfit",
           dateTag: "Stage IV • Photo 3",
           sceneType: "boston_dinner",
           levelId: 4

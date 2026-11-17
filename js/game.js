@@ -41,8 +41,13 @@ class AnniversaryGame {
     this.powerTokenSpawnTimer = 7.5;
     this.lastObstacleY = null;
 
-    // Universal Power-Up Lifecycle State
+    // Universal Power-Up Lifecycle & Hit Chances State (2 survivable hits, 3rd hit restarts)
+    this.maxHitsAllowed = 2;
+    this.hitsTaken = 0;
+    this.hitGraceTimer = 0;
     this.powerCharges = 0;
+    this.powerUpTimer = 0;
+    this.isInvincible = false;
     this.maxPowerCharges = this.config.powerUp.collectiblesRequired || 2;
     this.powerUpTimer = 0;
     this.powerUpDuration = this.config.powerUp.durationSeconds || 5.0;
@@ -384,6 +389,9 @@ class AnniversaryGame {
       entrySpeed: 280
     };
 
+    this.maxHitsAllowed = 2;
+    this.hitsTaken = 0;
+    this.hitGraceTimer = 0;
     this.powerCharges = 0;
     this.powerUpTimer = 0;
     this.isInvincible = false;
@@ -656,6 +664,12 @@ class AnniversaryGame {
     if (this.warlockShockwave > 0) {
       this.warlockShockwave = Math.max(0, this.warlockShockwave - dt * 1.4);
     }
+    if (this.hitGraceTimer > 0) {
+      this.hitGraceTimer = Math.max(0, this.hitGraceTimer - dt);
+    }
+    if (this.player.slipTimer > 0) {
+      this.player.slipTimer = Math.max(0, this.player.slipTimer - dt);
+    }
 
     // Seamless 4-Way Player Movement (Up, Down, Left, Right via Arrow Keys or WASD)
     const moveSpeed = 310 * (this.isInvincible ? 1.18 : 1.0);
@@ -828,16 +842,52 @@ class AnniversaryGame {
           }
           this.obstacles.splice(i, 1);
           continue;
+        } else if (this.hitGraceTimer > 0) {
+          // Brief recovery grace period after a non-fatal hit
+          continue;
         } else {
-          // If hit a Sprite Can on Level 4, play the exploding Sprite animation before Game Over!
-          if (obs.subType === "sprite_can") {
-            const exX = obs.x;
-            const exY = obs.y;
-            this.obstacles.splice(i, 1);
+          this.hitsTaken++;
+          const exX = obs.x;
+          const exY = obs.y;
+          const isSpriteCan = obs.subType === "sprite_can";
+          this.obstacles.splice(i, 1);
+          this.updateHUD();
+
+          // Player gets 2 chances to be hit before the 3rd hit forces a restart!
+          if (this.hitsTaken <= this.maxHitsAllowed) {
+            this.hitGraceTimer = 1.15;
+            this.player.slipTimer = 0.8;
+            const heartsLeft = (this.maxHitsAllowed + 1) - this.hitsTaken;
+
+            if (isSpriteCan) {
+              window.soundManager.playFizzPop();
+              for (let p = 0; p < 8; p++) {
+                this.spawnParticle(exX, exY, p % 2 === 0 ? "🫧" : "🍋");
+              }
+              this.addFloatingText(
+                this.player.x,
+                this.player.y - 44,
+                `🥫 Fizzy Hit! (${heartsLeft} ❤️ left)`,
+                "#4ade80"
+              );
+            } else {
+              window.soundManager.playBump();
+              this.spawnParticle(exX, exY, "💔");
+              this.addFloatingText(
+                this.player.x,
+                this.player.y - 44,
+                `💔 Ouch! (${heartsLeft} ❤️ left)`,
+                "#fda4af"
+              );
+            }
+            continue;
+          }
+
+          // 3rd hit (all 2 extra chances used up) -> Explode Sprite Can or Trigger Game Over!
+          if (isSpriteCan) {
             this.triggerSpriteCanExplosion(exX, exY);
             return;
           }
-          // Standard obstacle collision -> Trigger 'Game Over' screen with 'Restart' button!
           this.triggerGameOver();
           return;
         }
@@ -1195,6 +1245,13 @@ class AnniversaryGame {
 
     const scoreEl = document.getElementById("hudScore");
     if (scoreEl) scoreEl.textContent = this.score;
+
+    const heartsEl = document.getElementById("hudHearts");
+    if (heartsEl) {
+      const totalHearts = this.maxHitsAllowed + 1; // 3 hearts (2 survivable hits)
+      const remaining = Math.max(0, totalHearts - this.hitsTaken);
+      heartsEl.textContent = "❤️".repeat(remaining) + "🖤".repeat(totalHearts - remaining);
+    }
 
     const progressBar = document.getElementById("hudProgressBar");
     if (progressBar) {
