@@ -34,6 +34,7 @@
         </button>
         <div class="score-pill">✨ <span id="hudScore">0</span></div>
         <button id="muteBtn" class="btn-mute" type="button">🔊 Audio</button>
+        <button id="settingsBtn" class="btn-mute" type="button" title="Settings &amp; Debug Menu">⚙️ Settings</button>
       </div>
     </header>
 
@@ -77,6 +78,55 @@
           </p>
           <button id="restartBtn" class="btn-primary" type="button">
             🔄 Restart
+          </button>
+        </div>
+      </div>
+
+      <!-- 2b. SETTINGS & GOD MODE DEBUG OVERLAY -->
+      <div id="settingsOverlay" class="overlay hidden">
+        <div class="modal-card settings-card">
+          <span class="modal-badge">⚙️ Settings &amp; Debug</span>
+          <h2 class="modal-title" style="font-size: 1.65rem;">Game Settings</h2>
+
+          <div class="settings-row">
+            <label class="toggle-label" for="godModeCheckbox">
+              <span>
+                <strong>🛠️ God Mode</strong>
+                <small>Unlock direct stage selection, debug actions &amp; optional invincibility</small>
+              </span>
+              <input id="godModeCheckbox" type="checkbox" />
+            </label>
+          </div>
+
+          <div id="godModePanel" class="god-mode-panel hidden">
+            <div class="settings-row" style="margin-bottom: 12px;">
+              <label class="toggle-label" for="godInvincibleCheckbox">
+                <span>
+                  <strong>🛡️ Ignore Obstacle Collisions</strong>
+                  <small>Uncheck if you want to test Game Over or Sprite can explosions</small>
+                </span>
+                <input id="godInvincibleCheckbox" type="checkbox" checked />
+              </label>
+            </div>
+
+            <h4 class="settings-section-title">Jump Directly to Stage</h4>
+            <div class="stage-jump-grid">
+              <button class="btn-stage-jump" data-jump-stage="0" type="button">Stage I</button>
+              <button class="btn-stage-jump" data-jump-stage="1" type="button">Stage II</button>
+              <button class="btn-stage-jump" data-jump-stage="2" type="button">Stage III</button>
+              <button class="btn-stage-jump" data-jump-stage="3" type="button">Stage IV</button>
+            </div>
+
+            <h4 class="settings-section-title">Quick Debug Actions</h4>
+            <div class="stage-jump-grid">
+              <button id="debugSpawnFinishBtn" class="btn-stage-jump" type="button">🏁 Spawn Finish Line</button>
+              <button id="debugTriggerPowerBtn" class="btn-stage-jump" type="button">⚡ Trigger Boost</button>
+              <button id="debugShowFinaleBtn" class="btn-stage-jump" type="button">🏆 Finale Screen</button>
+            </div>
+          </div>
+
+          <button id="closeSettingsBtn" class="btn-primary" type="button" style="margin-top: 14px;">
+            Resume Game
           </button>
         </div>
       </div>

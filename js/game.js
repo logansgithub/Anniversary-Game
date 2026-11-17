@@ -105,6 +105,11 @@ class AnniversaryGame {
       right: false
     };
 
+    // Settings & God Mode Debug State
+    this.godMode = false;
+    this.godInvincible = true;
+    this.stateBeforeSettings = null;
+
     this.bindEvents();
     this.updateHUD();
     requestAnimationFrame(ts => this.gameLoop(ts));
@@ -222,6 +227,118 @@ class AnniversaryGame {
         muteBtn.textContent = isMuted ? "🔇 Muted" : "🔊 Audio";
       });
     }
+
+    // Settings & God Mode Menu Handlers
+    const settingsBtn = document.getElementById("settingsBtn");
+    if (settingsBtn) {
+      settingsBtn.addEventListener("click", () => {
+        this.toggleSettingsModal();
+      });
+    }
+
+    const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+    if (closeSettingsBtn) {
+      closeSettingsBtn.addEventListener("click", () => {
+        this.closeSettingsModal();
+      });
+    }
+
+    const godModeCheckbox = document.getElementById("godModeCheckbox");
+    if (godModeCheckbox) {
+      godModeCheckbox.addEventListener("change", e => {
+        this.godMode = e.target.checked;
+        const panel = document.getElementById("godModePanel");
+        if (panel) panel.classList.toggle("hidden", !this.godMode);
+        this.updateHUD();
+      });
+    }
+
+    const godInvincibleCheckbox = document.getElementById("godInvincibleCheckbox");
+    if (godInvincibleCheckbox) {
+      godInvincibleCheckbox.addEventListener("change", e => {
+        this.godInvincible = e.target.checked;
+      });
+    }
+
+    // Direct Stage Jump Buttons inside God Mode
+    document.querySelectorAll("[data-jump-stage]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const stageIdx = parseInt(btn.getAttribute("data-jump-stage"), 10);
+        window.soundManager.init();
+        this.closeSettingsModal();
+        this.startLevel(stageIdx);
+      });
+    });
+
+    // Also allow clicking the top progress dots directly when God Mode is enabled
+    document.querySelectorAll(".stage-dot").forEach(dot => {
+      dot.addEventListener("click", () => {
+        if (!this.godMode) return;
+        const stageIdx = parseInt(dot.getAttribute("data-stage-dot"), 10);
+        window.soundManager.init();
+        this.closeSettingsModal();
+        this.startLevel(stageIdx);
+      });
+    });
+
+    // Quick Debug Action Buttons
+    const debugSpawnFinishBtn = document.getElementById("debugSpawnFinishBtn");
+    if (debugSpawnFinishBtn) {
+      debugSpawnFinishBtn.addEventListener("click", () => {
+        this.closeSettingsModal();
+        if (this.state === "TITLE" || this.state === "GAMEOVER" || this.state === "TRANSITION" || this.state === "VICTORY") {
+          this.startLevel(this.currentLevelIndex);
+        }
+        if (this.state === "INTRO_SLIDE") {
+          this.introSlideTimer = 0;
+          this.player.x = 120;
+          this.player.y = this.height * 0.54;
+          this.player.spinAngle = 0;
+          this.state = "PLAYING";
+        }
+        this.stageElapsed = this.stageDurationSec;
+      });
+    }
+
+    const debugTriggerPowerBtn = document.getElementById("debugTriggerPowerBtn");
+    if (debugTriggerPowerBtn) {
+      debugTriggerPowerBtn.addEventListener("click", () => {
+        this.closeSettingsModal();
+        if (this.state === "PLAYING") {
+          this.tryActivatePowerUp(true);
+        }
+      });
+    }
+
+    const debugShowFinaleBtn = document.getElementById("debugShowFinaleBtn");
+    if (debugShowFinaleBtn) {
+      debugShowFinaleBtn.addEventListener("click", () => {
+        this.closeSettingsModal();
+        this.showVictoryScreen();
+      });
+    }
+  }
+
+  toggleSettingsModal() {
+    const overlay = document.getElementById("settingsOverlay");
+    if (!overlay) return;
+    if (overlay.classList.contains("hidden")) {
+      this.stateBeforeSettings = this.state;
+      this.state = "PAUSED_SETTINGS";
+      overlay.classList.remove("hidden");
+      this.updateHUD();
+    } else {
+      this.closeSettingsModal();
+    }
+  }
+
+  closeSettingsModal() {
+    const overlay = document.getElementById("settingsOverlay");
+    if (!overlay || overlay.classList.contains("hidden")) return;
+    overlay.classList.add("hidden");
+    if (this.state === "PAUSED_SETTINGS" && this.stateBeforeSettings) {
+      this.state = this.stateBeforeSettings;
+    }
   }
 
   startLevel(levelIndex) {
@@ -287,6 +404,7 @@ class AnniversaryGame {
     // Hide all modal overlays
     document.getElementById("titleOverlay").classList.add("hidden");
     document.getElementById("gameOverOverlay").classList.add("hidden");
+    document.getElementById("settingsOverlay").classList.add("hidden");
     document.getElementById("transitionOverlay").classList.add("hidden");
     document.getElementById("victoryOverlay").classList.add("hidden");
 
@@ -702,8 +820,8 @@ class AnniversaryGame {
       );
 
       if (hit) {
-        if (this.isInvincible) {
-          // Power-Up Shield Active: Safely knock obstacle away and award bonus points!
+        if (this.isInvincible || (this.godMode && this.godInvincible)) {
+          // Power-Up Shield or God Mode Invincibility Active: Safely knock obstacle away!
           this.score += 50;
           for (let p = 0; p < 6; p++) {
             this.spawnParticle(obs.x, obs.y, "💖");
@@ -1087,6 +1205,12 @@ class AnniversaryGame {
     document.querySelectorAll(".stage-dot").forEach((dot, idx) => {
       dot.classList.toggle("active", idx === this.currentLevelIndex);
       dot.classList.toggle("completed", idx < this.currentLevelIndex);
+      dot.classList.toggle("god-clickable", this.godMode);
+      dot.title = this.godMode ? `Jump to Stage ${idx + 1}` : "";
+    });
+
+    document.querySelectorAll("[data-jump-stage]").forEach((btn, idx) => {
+      btn.classList.toggle("active", idx === this.currentLevelIndex);
     });
 
     const powerBtn = document.getElementById("powerUpTriggerBtn");
