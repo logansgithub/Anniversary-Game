@@ -109,8 +109,8 @@ window.GAME_CONFIG = {
       powerUpIcon: "✨",
       collectibleIcon: "❄️",
       physics: {
-        frictionAir: 0.006,     // Low ice friction for authentic skating inertia
-        accel: 0.42,
+        frictionAir: 0.001,     // Low ice friction for authentic skating inertia
+        accel: 0.2,
         maxSpeed: 5.6,
         continuousForward: 0
       },
@@ -127,7 +127,7 @@ window.GAME_CONFIG = {
         },
         {
           imageSrc: "assets/photos/level1_photo2.jpg",
-          caption: "Back from our first flirt-iversary",
+          caption: "Our first flirt-iversary",
           dateTag: "Stage I • Photo 2",
           sceneType: "cocoa_bench",
           levelId: 1
@@ -172,7 +172,7 @@ window.GAME_CONFIG = {
         },
         {
           imageSrc: "assets/photos/level2_photo3.jpg",
-          caption: "Royal Court returns, this time wiht a KBBQ Feast afterwards",
+          caption: "Royal Court returns, this time with a KBBQ Feast afterwards",
           dateTag: "Stage II • Photo 3",
           sceneType: "ren_court",
           levelId: 2
@@ -228,7 +228,7 @@ window.GAME_CONFIG = {
         maxSpeed: 7.0,
         continuousForward: 0.23 // High-speed Cop Slide continuous forward momentum!
       },
-      completionHeadline: "Level Complete! Dinner with Julia in Boston! 🥂✨",
+      completionHeadline: "Level Complete! You made it to dinner with Julia in Boston! 🥂✨",
       completionStory: "After flying down the Cop Slide and dodging Salem witches and fizzing Sprite explosions past Fenway Park and the T, you crossed the finish line for dinner with Julia!",
       nextButtonText: "Next Level ➡️",
       photos: [
@@ -262,16 +262,16 @@ window.GAME_CONFIG = {
     headline: "Happy Anniversary, Jana! 💖",
     subheadline: "Every level of life is better because I get to play it hand-in-hand with you.",
     letterParagraphs: [
-      "From wobbling across the ice rink on our first date (and Chloe's mom making sure we had photos to prove it!), to wandering the Renaissance Faire with flower crowns and warlock spells, carving down snowy ski slopes for cozy fondue nights watching reindeer races, and flying down the Boston Cop Slide with Tatte lattes in hand—every single memory with you is my favorite adventure.",
+      "From wobbling across the ice rink on our first date (and Chloe's mom making sure we had photos to prove it!), to wandering the Renaissance Faire, carving down snowy ski slopes for cozy fondue nights watching reindeer races, and flying down the Boston Cop Slide with Tatte lattes in hand—every single memory with you is my favorite adventure.",
       "Thank you for your laughter, your warmth, your kindness, and for making every day feel like magic. Here is to so many more levels, trips, laughs, and memories together."
     ],
     signature: "With all my love, always ❤️",
     giftReveal: {
       buttonPrompt: "🎁 Click to Unwrap Your Surprise",
-      title: "Your Anniversary Surprise Awaits!",
-      subtitle: "Pack your bags & get ready for our next chapter together...",
-      details: "✨ Special Anniversary Dinner & Weekend Getaway Pass ✨\nRedeemable anytime for cozy hot cocoa, Tatte lattes, fondue for two, and a brand new adventure of your choice!",
-      footerNote: "(Tip: You can customize this gift card text and add photos anytime in js/config.js!)"
+      title: "Enjoy this special advent calendar!",
+      //subtitle: "Inside I've gathered just a few of your favorite things.",
+      details: "✨ Inside I've gathered just a few of your favorite things. ✨\n Open just one gift per day. I hope this energizes you to make it past your current difficult stretch of work! I'm looking forward to spending winter break together, this year and forever. ",
+      //footerNote: "(Tip: You can customize this gift card text and add photos anytime in js/config.js!)"
     }
   }
 };
