@@ -1387,20 +1387,21 @@ class AnniversaryGame {
       ctx.restore();
     }
 
-    // 5. Draw Partner Sprite when Holding Hands (Stage 1) or Warlock (Stage 2)
+    // 5. Draw Partner Sprite when Holding Hands (Stages 1, 3, 4) or Warlock (Stage 2)
     if (
-      (levelId === 1 && (this.isInvincible || this.state === "CUTSCENE")) ||
-      (levelId === 2 && this.isInvincible)
+      this.isInvincible ||
+      (levelId === 1 && this.state === "CUTSCENE")
     ) {
       const isWarlock = levelId === 2;
-      const partnerX = this.player.x - 46;
+      const holdingHands = levelId === 1 || levelId === 3 || levelId === 4;
+      const partnerX = this.player.x - 44;
       const partnerY = this.player.y - 2;
-      this.sprites.drawPartner(ctx, partnerX, partnerY, this.time, isWarlock);
+      this.sprites.drawPartner(ctx, partnerX, partnerY, this.time, isWarlock, null, levelId, holdingHands);
 
-      if (levelId === 1) {
+      if (holdingHands) {
         ctx.font = "18px sans-serif";
         ctx.textAlign = "center";
-        ctx.fillText("💗", this.player.x - 23, this.player.y - 42);
+        ctx.fillText("💗", this.player.x - 22, this.player.y - 42);
       }
     }
 

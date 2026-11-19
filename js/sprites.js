@@ -509,10 +509,11 @@ class SpriteRenderer {
   }
 
   /**
-   * Draws Partner Character (Skating Hand-in-Hand in Stage 1, Warlock in Stage 2, or Cutscenes)
+   * Draws Partner Character (Skating Hand-in-Hand in Stage 1, Warlock in Stage 2,
+   * Blue Ski Jacket in Stage 3, Navy Blue Jacket + Black Satchel in Stage 4, or Cutscenes)
    * Scaled to match Jana (~2x) unless overridden for polaroid thumbnails.
    */
-  drawPartner(ctx, x, y, time = 0, isWarlock = false, customScale = null) {
+  drawPartner(ctx, x, y, time = 0, isWarlock = false, customScale = null, levelId = 1, holdingHands = false) {
     ctx.save();
     ctx.translate(x, y);
 
@@ -526,6 +527,24 @@ class SpriteRenderer {
     ctx.beginPath();
     ctx.ellipse(0, 23, 16, 6, 0, 0, Math.PI * 2);
     ctx.fill();
+
+    // Stage 3 Skis underneath boots
+    if (levelId === 3 && !isWarlock) {
+      ctx.save();
+      ctx.fillStyle = "#2563eb";
+      ctx.strokeStyle = "#bfdbfe";
+      ctx.lineWidth = 1.4;
+      this.roundRect(ctx, -14, 15, 32, 4.5, 2.2);
+      ctx.fill();
+      ctx.stroke();
+      this.roundRect(ctx, -12, 20.5, 32, 4.5, 2.2);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = "#1e293b";
+      ctx.fillRect(-3, 15.5, 6, 3.5);
+      ctx.fillRect(-1, 21, 6, 3.5);
+      ctx.restore();
+    }
 
     if (isWarlock) {
       // Black-Caped Warlock Aura (Stage 2 Power-Up!)
@@ -562,8 +581,122 @@ class SpriteRenderer {
       ctx.beginPath();
       ctx.arc(14, -20, 5.5 + Math.sin(time * 12) * 1.5, 0, Math.PI * 2);
       ctx.fill();
+    } else if (levelId === 3) {
+      // STAGE 3: Blue Ski Jacket & Ski Pants
+      ctx.fillStyle = "#1e293b";
+      this.roundRect(ctx, -7, 13, 5.5, 8, 2);
+      this.roundRect(ctx, 1.5, 13, 5.5, 8, 2);
+      ctx.fill();
+
+      // Bright Blue Alpine Ski Jacket
+      const skiGrad = ctx.createLinearGradient(-11.5, 0, 11.5, 15);
+      skiGrad.addColorStop(0, "#3b82f6");
+      skiGrad.addColorStop(1, "#1d4ed8");
+      ctx.fillStyle = skiGrad;
+      this.roundRect(ctx, -11.5, 0, 23, 15.5, 6);
+      ctx.fill();
+
+      // Lighter blue alpine chest stripe & zipper
+      ctx.fillStyle = "#93c5fd";
+      ctx.fillRect(-11, 5.5, 22, 3);
+      ctx.strokeStyle = "#e0f2fe";
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.moveTo(0, 1);
+      ctx.lineTo(0, 15);
+      ctx.stroke();
+
+      // Left arm & extended right arm when holding Jana's hand
+      ctx.fillStyle = "#2563eb";
+      this.roundRect(ctx, -14.5, 3, 4.5, 9, 2);
+      ctx.fill();
+      if (holdingHands) {
+        this.roundRect(ctx, 9.5, 4.5, 10, 4.2, 2);
+        ctx.fill();
+        ctx.fillStyle = "#1e293b";
+        ctx.beginPath();
+        ctx.arc(19, 6.6, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        this.roundRect(ctx, 10, 3, 4.5, 9, 2);
+        ctx.fill();
+      }
+
+      // Cozy light-blue winter scarf
+      ctx.fillStyle = "#38bdf8";
+      this.roundRect(ctx, -10.5, -2, 21, 4.2, 2);
+      ctx.fill();
+    } else if (levelId === 4) {
+      // STAGE 4: Navy Blue Jacket & Black Satchel (Boston Promenade)
+      ctx.fillStyle = "#1e293b";
+      this.roundRect(ctx, -7, 13, 5.5, 8.5, 2);
+      this.roundRect(ctx, 1.5, 13, 5.5, 8.5, 2);
+      ctx.fill();
+
+      // Tailored Navy Blue Jacket
+      const navyGrad = ctx.createLinearGradient(-11.5, 0, 11.5, 15.5);
+      navyGrad.addColorStop(0, "#1e3a8a");
+      navyGrad.addColorStop(1, "#172554");
+      ctx.fillStyle = navyGrad;
+      ctx.strokeStyle = "#334155";
+      ctx.lineWidth = 0.8;
+      this.roundRect(ctx, -11.5, 0, 23, 15.5, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Collar & subtle navy jacket lapel/buttons
+      ctx.fillStyle = "#0f172a";
+      ctx.beginPath();
+      ctx.moveTo(-4.5, 0);
+      ctx.lineTo(0, 4.5);
+      ctx.lineTo(4.5, 0);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = "#94a3b8";
+      ctx.beginPath();
+      ctx.arc(0, 7.2, 1.0, 0, Math.PI * 2);
+      ctx.arc(0, 11.2, 1.0, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Arms (extending right hand to hold Jana's hand!)
+      ctx.fillStyle = "#172554";
+      this.roundRect(ctx, -14.5, 3, 4.5, 9, 2);
+      ctx.fill();
+      if (holdingHands) {
+        this.roundRect(ctx, 9.5, 4.5, 10, 4.2, 2);
+        ctx.fill();
+        ctx.fillStyle = this.config.partner.skinTone || "#f5cdb4";
+        ctx.beginPath();
+        ctx.arc(19, 6.6, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        this.roundRect(ctx, 10, 3, 4.5, 9, 2);
+        ctx.fill();
+      }
+
+      // Black Crossbody Satchel (diagonal strap + black messenger bag on left hip)
+      ctx.strokeStyle = "#09090b";
+      ctx.lineWidth = 2.6;
+      ctx.beginPath();
+      ctx.moveTo(7.5, 0.5);
+      ctx.lineTo(-9.5, 13.5);
+      ctx.stroke();
+
+      // Satchel Bag Body
+      ctx.fillStyle = "#09090b";
+      ctx.strokeStyle = "#3f3f46";
+      ctx.lineWidth = 1;
+      this.roundRect(ctx, -15.5, 9.5, 10.5, 9, 2);
+      ctx.fill();
+      ctx.stroke();
+      // Satchel Flap & Metallic Clasp
+      ctx.fillStyle = "#18181b";
+      this.roundRect(ctx, -15.5, 9.5, 10.5, 4.2, 1.5);
+      ctx.fill();
+      ctx.fillStyle = "#d4d4d8";
+      ctx.fillRect(-11.2, 12.8, 2.2, 1.8);
     } else {
-      // Winter Jacket, Jeans & Ice Skates
+      // STAGE 1: Winter Jacket, Jeans & Ice Skates
       ctx.fillStyle = "#1e293b";
       this.roundRect(ctx, -7, 13, 5.5, 8, 2);
       this.roundRect(ctx, 1.5, 13, 5.5, 8, 2);
@@ -580,6 +713,17 @@ class SpriteRenderer {
       ctx.moveTo(0, 1);
       ctx.lineTo(0, 14.5);
       ctx.stroke();
+
+      // Extended arm when holding Jana's hand
+      if (holdingHands) {
+        ctx.fillStyle = this.config.partner.jacketColor || "#2563eb";
+        this.roundRect(ctx, 9.5, 4.5, 10, 4.2, 2);
+        ctx.fill();
+        ctx.fillStyle = "#38bdf8";
+        ctx.beginPath();
+        ctx.arc(19, 6.6, 2.4, 0, Math.PI * 2);
+        ctx.fill();
+      }
 
       // Striped winter scarf
       ctx.fillStyle = "#38bdf8";
@@ -598,6 +742,17 @@ class SpriteRenderer {
     ctx.beginPath();
     ctx.arc(0, -13, 12.2, Math.PI * 0.92, Math.PI * 2.08);
     ctx.fill();
+
+    // Stage 3 Ski Goggles resting on forehead
+    if (levelId === 3 && !isWarlock) {
+      ctx.fillStyle = "#0f172a";
+      this.roundRect(ctx, -9, -18, 18, 5.2, 2.4);
+      ctx.fill();
+      ctx.fillStyle = "#38bdf8";
+      this.roundRect(ctx, -7.8, -17.2, 7, 3.6, 1.5);
+      this.roundRect(ctx, 0.8, -17.2, 7, 3.6, 1.5);
+      ctx.fill();
+    }
 
     // Eyes with catchlights & warm smile
     ctx.fillStyle = "#1e293b";
@@ -2390,7 +2545,7 @@ class SpriteRenderer {
     // Draw Partner & Jana side-by-side in level-appropriate outfits!
     ctx.save();
     ctx.translate(w * 0.41, h * 0.68);
-    this.drawPartner(ctx, 0, 0, time, levelId === 2, 1.3);
+    this.drawPartner(ctx, 0, 0, time, levelId === 2, 1.3, levelId, false);
     ctx.restore();
 
     ctx.save();
